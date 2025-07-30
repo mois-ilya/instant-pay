@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock Tonkeeper Wallet</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .status.active {
+            background: #e8f5e8;
+            color: #2d5a2d;
+            border: 1px solid #a8d8a8;
+        }
+        .status.inactive {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .logs {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 15px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 2px 0;
+        }
+        .log-entry.event {
+            color: #0066cc;
+        }
+        .log-entry.error {
+            color: #cc0000;
+        }
+        .log-entry.info {
+            color: #666;
+        }
+        button {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0052a3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🦄 Mock Tonkeeper Wallet</h1>
+            <p>Simulates Tonkeeper InstantPay extension for testing</p>
+        </div>
+
+        <div id="status" class="status inactive">
+            <strong>Status:</strong> <span id="status-text">Inactive</span>
+        </div>
+
+        <div class="section">
+            <h3>⚙️ Configuration</h3>
+            <div id="config-display">
+                <p><strong>Network:</strong> <span id="network">testnet</span></p>
+                <p><strong>TON Limit:</strong> <span id="ton-limit">10</span> TON</p>
+                <p><strong>Supported Jettons:</strong> <span id="jettons-count">0</span></p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>🎛️ Controls</h3>
+            <button onclick="mockWallet.toggleActivation()">Toggle Wallet</button>
+            <button onclick="mockWallet.clearLogs()">Clear Logs</button>
+            <button onclick="mockWallet.simulateError('limit')">Test Limit Error</button>
+            <button onclick="mockWallet.simulateError('concurrent')">Test Concurrent</button>
+        </div>
+
+        <div class="section">
+            <h3>📋 Event Logs</h3>
+            <div id="logs" class="logs"></div>
+        </div>
+
+        <div class="section">
+            <h3>ℹ️ Instructions</h3>
+            <p>1. This mock wallet automatically injects <code>window.tonkeeper.instantPay</code> API</p>
+            <p>2. Open a dApp in another tab to test the integration</p>
+            <p>3. Use the controls above to test error scenarios</p>
+            <p>4. Watch the logs to see API calls and events</p>
+        </div>
+    </div>
+
+    <!-- Mock wallet will be injected here -->
+    <script>
+        // Global reference for debug controls
+        let mockWallet;
+    </script>
+</body>
+</html>

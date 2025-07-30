@@ -1,0 +1,38 @@
+{
+  "name": "tonkeeper-instant-pay",
+  "version": "1.0.0",
+  "description": "Implementation and testing environment for Tonkeeper InstantPay protocol",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build:types && npm run build:mock-wallet && npm run build:dapp",
+    "build:types": "cd packages/types && npm run build",
+    "build:mock-wallet": "cd packages/mock-wallet && npm run build",
+    "build:dapp": "cd packages/dapp && npm run build",
+    "dev": "concurrently \"npm run dev:mock-wallet\" \"npm run dev:dapp\"",
+    "dev:mock-wallet": "cd packages/mock-wallet && npm run dev",
+    "dev:dapp": "cd packages/dapp && npm run dev",
+    "clean": "rimraf packages/*/dist",
+    "test": "echo \"Test scripts will be added later\"",
+    "prepare": "npm run build:types"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "concurrently": "^8.2.0",
+    "rimraf": "^5.0.0",
+    "typescript": "^5.0.0",
+    "webpack": "^5.0.0",
+    "webpack-cli": "^5.0.0",
+    "webpack-dev-server": "^4.0.0",
+    "ts-loader": "^9.0.0",
+    "html-webpack-plugin": "^5.0.0",
+    "css-loader": "^6.0.0",
+    "style-loader": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
