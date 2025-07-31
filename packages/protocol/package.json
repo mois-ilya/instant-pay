@@ -1,0 +1,20 @@
+{
+  "name": "@tonkeeper/instantpay-protocol",
+  "version": "0.1.0",
+  "description": "JSON Schema definitions and TypeScript type generation for InstantPay protocol",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc && npm run generate-types",
+    "generate-types": "node scripts/generate-types.js",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "ts-json-schema-generator": "^1.5.0"
+  },
+  "files": ["dist", "schemas"],
+  "keywords": ["tonkeeper", "instant-pay", "protocol", "types"],
+  "license": "MIT"
+}

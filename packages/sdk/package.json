@@ -1,0 +1,23 @@
+{
+  "name": "@tonkeeper/instantpay-sdk",
+  "version": "0.1.0",
+  "description": "InstantPay SDK for dApp and wallet developers",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@tonkeeper/instantpay-protocol": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "vitest": "^1.2.0"
+  },
+  "files": ["dist"],
+  "keywords": ["tonkeeper", "instant-pay", "sdk", "ton", "wallet"],
+  "license": "MIT"
+}
