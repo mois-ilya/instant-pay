@@ -6,17 +6,17 @@
 
 ## 1. Overview
 
-Tonkeeper InstantPay 1.0 определяет минимальный браузерный интерфейс, через который dApp показывает кнопку «Оплатить» и получает синхронную обратную связь от кошелька‑расширения Tonkeeper. Протокол строится на трёх публичных точках:
+Tonkeeper InstantPay 1.0 defines a minimal browser‑level interface that lets a dApp display a **Pay** button and receive synchronous feedback from the Tonkeeper wallet browser extension. The protocol exposes exactly **three** public entry points:
 
-| API               | Назначение                                  |
-| ----------------- | ------------------------------------------- |
-| `setPayButton()`  | Показать/обновить платёжную кнопку          |
-| `hidePayButton()` | Скрыть кнопку и отменить активный invoice   |
-| `events`          | Субъект‑эмиттер (`click → sent/ cancelled`) |
+| API               | Purpose                                                  |
+| ----------------- | -------------------------------------------------------- |
+| `setPayButton()`  | Render or update the Pay button                          |
+| `hidePayButton()` | Remove the button and cancel the active invoice (if any) |
+| `events`          | Subject‑style emitter (`click → sent / cancelled`)       |
 
-Все остальные детали (учёт комиссий, отправка транзакций, сетевые ошибки) остаются внутри кошелька; dApp узнаёт только факт отправки либо отмены.
+Everything else—fee calculation, transaction submission, network errors—happens **inside** the wallet; the dApp only learns whether the transaction was broadcast or cancelled.
 
-### 1.1 Flow диаграмма
+### 1.1 Flow diagram
 
 ```mermaid
 graph LR
@@ -29,20 +29,20 @@ graph LR
     B -- hide button --> B
 ```
 
-*Для каждого `invoiceId` после `click` кошелёк эмитит **ровно одно** событие — либо `sent`, либо `cancelled`.*
+*For every `invoiceId` the wallet emits **exactly one** terminal event—either `sent` or `cancelled`—after `click`.*
 
 ---
 
 ## 2. Wallet Injection
 
-При загрузке страницы расширение создаёт глобальный объект:
+On page load the extension injects a global object:
 
 ```typescript
 window.tonkeeper.instantPay = {
-  config: InstantPayConfig;          // лимиты, сеть, подписи
-  setPayButton(params): void;        // показать / обновить кнопку
-  hidePayButton(): void;             // убрать кнопку
-  events: InstantPayEmitter;         // события click / sent / cancelled
+  config: InstantPayConfig;          // limits, network, label presets
+  setPayButton(params): void;        // render / update the button
+  hidePayButton(): void;             // remove the button
+  events: InstantPayEmitter;         // click / sent / cancelled events
 };
 ```
 
@@ -66,12 +66,12 @@ interface InstantPayConfig {
 
 ```typescript
 interface SetPayButtonParams {
-  amount: string;              // десятичная строка (с учётом fee)
-  recipient: string;           // TON‑адрес получателя (bounce‑able)
+  amount: string;              // decimal string, includes network fee
+  recipient: string;           // bounceable TON address
   label: InstantPayConfig['payLabels'][number];
-  invoiceId: string;           // UUID — уникален для транзакции
-  jetton?: string;             // опционально: адрес токена
-  adnlAddress?: string;        // опционально: ADNL мерчанта
+  invoiceId: string;           // UUID, unique per transaction
+  jetton?: string;             // optional jetton master address
+  adnlAddress?: string;        // optional merchant ADNL
 }
 ```
 
@@ -81,17 +81,17 @@ interface SetPayButtonParams {
 
 ### 3.1 `setPayButton(params)`
 
-* Валидирует входные данные; при ошибке бросает одно из исключений:
+* Validates the input and throws synchronously on error:
 
   * `InstantPayInvalidParamsError`
   * `InstantPayLimitExceededError`
   * `InstantPayConcurrentOperationError`
-* При успехе кошелёк отображает (или обновляет) кнопку поверх страницы.
+* On success the wallet renders or updates the overlay button.
 
 ### 3.2 `hidePayButton()`
 
-* Скрывает кнопку и сбрасывает активный `invoiceId`.
-* Идempotентен — повторные вызовы игнорируются.
+* Removes the button and clears the active `invoiceId`.
+* Idempotent—extra calls are ignored.
 
 ### 3.3 Error Classes
 
@@ -112,24 +112,30 @@ class InstantPayConcurrentOperationError extends Error {
 
 ```typescript
 interface InstantPayEmitter {
-  on<E extends Event['type']>(type: E, fn: (e: Extract<Event,{type:E}>) => void): () => void;
-  off<E extends Event['type']>(type: E, fn: (e: Extract<Event,{type:E}>) => void): void;
-  // wallet‑internal emit
+  on<E extends IPEvent['type']>(
+    type: E,
+    fn: (e: Extract<IPEvent, { type: E }>) => void
+  ): () => void;
+  off<E extends IPEvent['type']>(
+    type: E,
+    fn: (e: Extract<IPEvent, { type: E }>) => void
+  ): void;
+  // `emit` is wallet‑internal only
 }
 
-type Event =
+type IPEvent =
   | { type: 'click'; invoiceId: string }
   | { type: 'sent'; invoiceId: string; boc: string }
   | { type: 'cancelled'; invoiceId: string };
 ```
 
-*Слушатели вызываются синхронно в том же tick, что и `emit`.*
+*Listeners fire synchronously in the same event loop tick as `emit`.*
 
 ---
 
 ## 5. Usage Examples
 
-### dApp
+### dApp code
 
 ```typescript
 const ip = window.tonkeeper?.instantPay;
@@ -149,13 +155,16 @@ const off = ip.events.on('sent', ({ boc }) => {
 });
 ```
 
-### Wallet (internal)
+### Wallet‑side implementation sketch
 
 ```typescript
-// after user taps
+// after the user taps the overlay button
 this.events.emit({ type: 'click', invoiceId });
-// after signature
+
+// after signing & broadcasting
 this.events.emit({ type: 'sent', invoiceId, boc });
 ```
 
 ---
+
+*End of specification*
