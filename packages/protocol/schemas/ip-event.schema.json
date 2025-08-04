@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "Event",
+  "title": "Event",
+  "description": "Union type for all InstantPay events emitted by the wallet",
+  "oneOf": [
+    {
+      "type": "object",
+      "title": "Click Event",
+      "description": "Emitted when user clicks the pay button",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "click"
+        },
+        "invoiceId": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "description": "UUID of the invoice being processed"
+        }
+      },
+      "required": ["type", "invoiceId"],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "title": "Sent Event",
+      "description": "Emitted when transaction is successfully broadcast to the network",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "sent"
+        },
+        "invoiceId": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "description": "UUID of the completed invoice"
+        },
+        "boc": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9+/=]+$",
+          "description": "Base64-encoded BOC of the sent transaction"
+        }
+      },
+      "required": ["type", "invoiceId", "boc"],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "title": "Cancelled Event",
+      "description": "Emitted when user cancels the payment or an error occurs",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "cancelled"
+        },
+        "invoiceId": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "description": "UUID of the cancelled invoice"
+        }
+      },
+      "required": ["type", "invoiceId"],
+      "additionalProperties": false
+    }
+  ]
+}

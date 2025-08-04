@@ -10,9 +10,6 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@tonkeeper/instantpay-protocol": "workspace:*",
-    "@tonkeeper/instantpay-sdk": "workspace:*",
-    "mock-wallet": "workspace:*",
     "solid-js": "^1.8.0"
   },
   "devDependencies": {
