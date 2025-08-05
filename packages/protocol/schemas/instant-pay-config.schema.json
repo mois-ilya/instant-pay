@@ -70,6 +70,6 @@
             "uniqueItems": true
         }
     },
-    "required": ["network", "limitTon", "jettons", "labels"],
+    "required": ["network", "tonLimit", "jettons", "labels"],
     "additionalProperties": false
 }

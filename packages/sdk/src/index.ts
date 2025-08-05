@@ -9,13 +9,16 @@
 export { InstantPay } from './instant-pay';
 export { InstantPayEmitter } from './events';
 
-// Type exports
+// Type exports from protocol
 export type {
-  InstantPayConfig,
+  Config as InstantPayConfig,
   SetPayButtonParams,
-  IPEvent,
-  InstantPayAPI
+  Event as IPEvent
 } from '@tonkeeper/instantpay-protocol';
+
+// Type exports from SDK
+export type { InstantPayAPI } from './instant-pay';
+export type { InstantPayEmitterInterface } from './events';
 
 // Error exports
 export {
@@ -23,6 +26,3 @@ export {
   InstantPayLimitExceededError,
   InstantPayConcurrentOperationError
 } from './errors';
-
-// Utility exports
-export * from './utils';

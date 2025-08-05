@@ -23,7 +23,7 @@ export interface Config {
   /**
    * Maximum TON amount for instant payments (decimal string)
    */
-  tonLimit?: string;
+  tonLimit: string;
   /**
    * List of supported jettons with their limits
    */
