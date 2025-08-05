@@ -14,10 +14,18 @@
     "@tonkeeper/instantpay-protocol": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "^5.3.0",
-    "vitest": "^1.2.0"
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
   },
-  "files": ["dist"],
-  "keywords": ["tonkeeper", "instant-pay", "sdk", "ton", "wallet"],
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "tonkeeper",
+    "instant-pay",
+    "sdk",
+    "ton",
+    "wallet"
+  ],
   "license": "MIT"
 }

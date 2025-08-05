@@ -13,13 +13,19 @@
     "@tonkeeper/instantpay-protocol": "workspace:*",
     "@tonkeeper/instantpay-sdk": "workspace:*",
     "mock-wallet": "workspace:*",
-    "solid-js": "^1.8.0"
+    "solid-js": "^1.9.7"
   },
   "devDependencies": {
-    "typescript": "^5.3.0",
-    "vite": "^5.0.0",
-    "vite-plugin-solid": "^2.8.0"
+    "typescript": "^5.9.2",
+    "vite": "^7.0.6",
+    "vite-plugin-solid": "^2.11.8"
   },
-  "keywords": ["tonkeeper", "instant-pay", "demo", "dapp", "solid"],
+  "keywords": [
+    "tonkeeper",
+    "instant-pay",
+    "demo",
+    "dapp",
+    "solid"
+  ],
   "license": "MIT"
 }

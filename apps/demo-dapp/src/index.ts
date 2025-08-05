@@ -6,10 +6,7 @@
  */
 
 // Main app export
-export { App } from './app';
-
-// Demo scenarios
-export * from './scenarios';
+export { App } from './App';
 
 // UI components
 export * from './components';

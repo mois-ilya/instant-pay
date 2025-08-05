@@ -2,33 +2,39 @@
   "name": "instant-pay",
   "version": "0.1.0",
   "description": "InstantPay 1.0 SDK & Samples - Browser interaction protocol for Tonkeeper wallet",
+  "type": "module",
   "private": true,
-  "workspaces": [
-    "packages/*",
-    "apps/*"
-  ],
   "scripts": {
-    "build": "npm run build --workspaces",
-    "dev": "npm run dev --workspaces",
-    "test": "npm run test --workspaces",
-    "lint": "eslint packages/*/src apps/*/src --ext .ts,.tsx",
+    "build": "pnpm -r run build",
+    "dev": "pnpm -r run dev",
+    "test": "pnpm -r run test",
+    "lint": "eslint packages/*/src apps/*/src",
     "clean": "rm -rf packages/*/dist apps/*/dist packages/*/node_modules apps/*/node_modules node_modules",
-    "demo": "npm run dev --workspace=demo-dapp"
+    "demo": "pnpm --filter demo-dapp run dev"
   },
   "devDependencies": {
-    "@types/node": "^20.11.0",
-    "typescript": "^5.3.0",
-    "eslint": "^8.56.0",
-    "@typescript-eslint/eslint-plugin": "^6.19.0",
-    "@typescript-eslint/parser": "^6.19.0"
+    "@eslint/js": "^9.32.0",
+    "@types/node": "^24.2.0",
+    "@typescript-eslint/eslint-plugin": "^8.39.0",
+    "@typescript-eslint/parser": "^8.39.0",
+    "eslint": "^9.32.0",
+    "globals": "^16.3.0",
+    "typescript": "^5.9.2"
   },
   "engines": {
     "node": ">=20"
   },
-  "keywords": ["tonkeeper", "instant-pay", "ton", "blockchain", "wallet"],
+  "keywords": [
+    "tonkeeper",
+    "instant-pay",
+    "ton",
+    "blockchain",
+    "wallet"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/tonkeeper/instant-pay.git"
-  }
+  },
+  "packageManager": "pnpm@10.14.0+sha512.ad27a79641b49c3e481a16a805baa71817a04bbe06a38d17e60e2eaee83f6a146c6a688125f5792e48dd5ba30e7da52a5cda4c3992b9ccf333f9ce223af84748"
 }
