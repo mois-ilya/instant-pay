@@ -139,9 +139,10 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
   };
 
   const cycleThroughLabels = () => {
-    if (!props.instantPay?.config) return;
+    const config = props.instantPay?.config;
+    if (!config) return;
     
-    const labels = props.instantPay.config.payLabels;
+    const labels = config.labels;
     let currentIndex = 0;
     
     const cycle = () => {
@@ -171,66 +172,30 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
   };
 
   return (
-    <div style={{
-      'background': 'white',
-      'border-radius': '12px',
-      'padding': '20px',
-      'box-shadow': '0 2px 8px rgba(0,0,0,0.1)'
-    }}>
-      <h3 style={{ 'margin': '0 0 20px 0', 'color': '#2c3e50' }}>
-        Demo Scenarios
-      </h3>
+    <div class="bg-white rounded-xl p-5 shadow-sm">
+      <h3 class="text-xl font-semibold text-slate-800 mb-5">Demo Scenarios</h3>
 
       <Show 
         when={props.walletType !== 'none'}
         fallback={
-          <div style={{
-            'padding': '20px',
-            'text-align': 'center',
-            'color': '#e74c3c',
-            'background': '#fdf2f2',
-            'border-radius': '8px',
-            'border': '1px solid #f5c6cb'
-          }}>
+          <div class="p-5 text-center text-red-600 bg-red-50 rounded-lg border border-red-200">
             No wallet available. Install Tonkeeper or enable mock wallet to test scenarios.
           </div>
         }
       >
         {/* Control Buttons */}
-        <div style={{
-          'display': 'flex',
-          'gap': '10px',
-          'margin-bottom': '20px',
-          'flex-wrap': 'wrap'
-        }}>
+        <div class="flex flex-wrap gap-3 mb-5">
           <button
             onClick={hidePayButton}
-            style={{
-              'background': '#6c757d',
-              'color': 'white',
-              'border': 'none',
-              'border-radius': '6px',
-              'padding': '8px 16px',
-              'cursor': 'pointer',
-              'font-weight': 'bold'
-            }}
+            class="bg-slate-500 hover:bg-slate-600 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
           >
             Hide Pay Button
           </button>
           
           <button
             onClick={cycleThroughLabels}
-            disabled={!props.instantPay?.config?.payLabels?.length}
-            style={{
-              'background': '#17a2b8',
-              'color': 'white',
-              'border': 'none',
-              'border-radius': '6px',
-              'padding': '8px 16px',
-              'cursor': 'pointer',
-              'font-weight': 'bold',
-              'opacity': !props.instantPay?.config?.payLabels?.length ? '0.5' : '1'
-            }}
+            disabled={!props.instantPay?.config?.labels?.length}
+            class="bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
           >
             Cycle Through Labels
           </button>
@@ -238,67 +203,28 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
 
         {/* Error Display */}
         <Show when={error()}>
-          <div style={{
-            'padding': '12px',
-            'margin-bottom': '20px',
-            'background': '#f8d7da',
-            'border': '1px solid #f5c6cb',
-            'border-radius': '6px',
-            'color': '#721c24'
-          }}>
+          <div class="p-3 mb-5 bg-red-50 border border-red-200 rounded-lg text-red-800">
             <strong>Error:</strong> {error()}
           </div>
         </Show>
 
         {/* Active Scenario Display */}
         <Show when={activeScenario()}>
-          <div style={{
-            'padding': '12px',
-            'margin-bottom': '20px',
-            'background': '#d1ecf1',
-            'border': '1px solid #bee5eb',
-            'border-radius': '6px',
-            'color': '#0c5460'
-          }}>
+          <div class="p-3 mb-5 bg-blue-50 border border-blue-200 rounded-lg text-blue-800">
             <strong>Active Scenario:</strong> {activeScenario()}
           </div>
         </Show>
 
         {/* Scenarios Grid */}
-        <div style={{
-          'display': 'grid',
-          'grid-template-columns': 'repeat(auto-fit, minmax(300px, 1fr))',
-          'gap': '15px'
-        }}>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-5">
           <For each={scenarios}>
             {(scenario) => (
-              <div style={{
-                'border': '1px solid #e9ecef',
-                'border-radius': '8px',
-                'padding': '15px',
-                'background': activeScenario() === scenario.id ? '#f8f9fa' : 'white'
-              }}>
-                <h4 style={{ 'margin': '0 0 8px 0', 'color': '#495057' }}>
-                  {scenario.title}
-                </h4>
+              <div class={`border border-slate-200 rounded-lg p-4 transition-colors ${activeScenario() === scenario.id ? 'bg-slate-50' : 'bg-white'}`}>
+                <h4 class="text-base font-semibold text-slate-700 mb-2">{scenario.title}</h4>
                 
-                <p style={{ 
-                  'margin': '0 0 12px 0', 
-                  'color': '#6c757d', 
-                  'font-size': '14px',
-                  'line-height': '1.4'
-                }}>
-                  {scenario.description}
-                </p>
+                <p class="text-sm text-slate-600 mb-3 leading-relaxed">{scenario.description}</p>
 
-                <div style={{
-                  'background': '#f8f9fa',
-                  'border-radius': '4px',
-                  'padding': '8px',
-                  'margin-bottom': '12px',
-                  'font-size': '11px',
-                  'font-family': 'monospace'
-                }}>
+                <div class="bg-slate-50 rounded p-2 mb-3 text-xs font-mono space-y-1">
                   <div><strong>Amount:</strong> {scenario.params.amount}</div>
                   <div><strong>Label:</strong> {scenario.params.label}</div>
                   {scenario.params.jetton && (
@@ -306,30 +232,14 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
                   )}
                 </div>
 
-                <div style={{
-                  'font-size': '12px',
-                  'color': '#28a745',
-                  'margin-bottom': '12px',
-                  'font-style': 'italic'
-                }}>
+                <div class="text-xs text-green-600 mb-3 italic">
                   Expected: {scenario.expectedOutcome}
                 </div>
 
                 <button
                   onClick={() => runScenario(scenario)}
                   disabled={!props.instantPay}
-                  style={{
-                    'background': '#007bff',
-                    'color': 'white',
-                    'border': 'none',
-                    'border-radius': '4px',
-                    'padding': '8px 12px',
-                    'cursor': 'pointer',
-                    'font-size': '12px',
-                    'font-weight': 'bold',
-                    'width': '100%',
-                    'opacity': !props.instantPay ? '0.5' : '1'
-                  }}
+                  class="w-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-3 py-2 rounded font-semibold text-sm transition-colors"
                 >
                   Run Scenario
                 </button>
@@ -339,17 +249,9 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
         </div>
 
         {/* Instructions */}
-        <div style={{
-          'margin-top': '20px',
-          'padding': '15px',
-          'background': '#e7f3ff',
-          'border-radius': '8px',
-          'border': '1px solid #b8daff'
-        }}>
-          <h4 style={{ 'margin': '0 0 10px 0', 'color': '#004085' }}>
-            How to Use
-          </h4>
-          <ol style={{ 'margin': '0', 'color': '#004085', 'font-size': '14px' }}>
+        <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <h4 class="text-base font-semibold text-blue-900 mb-3">How to Use</h4>
+          <ol class="text-sm text-blue-800 space-y-1 list-decimal ml-4">
             <li>Click "Run Scenario" to test different InstantPay features</li>
             <li>Watch the Event Logs panel for real-time feedback</li>
             <li>Try interacting with the Pay button when it appears</li>

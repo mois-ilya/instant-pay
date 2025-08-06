@@ -24,16 +24,16 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
     }
   };
 
-  const getEventColor = (type: IPEvent['type']) => {
+  const getEventTypeClass = (type: IPEvent['type']) => {
     switch (type) {
       case 'click':
-        return '#3498db';
+        return 'font-bold text-blue-600 uppercase text-xs';
       case 'sent':
-        return '#27ae60';
+        return 'font-bold text-green-600 uppercase text-xs';
       case 'cancelled':
-        return '#e74c3c';
+        return 'font-bold text-red-600 uppercase text-xs';
       default:
-        return '#95a5a6';
+        return 'font-bold text-slate-600 uppercase text-xs';
     }
   };
 
@@ -46,133 +46,57 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
   };
 
   return (
-    <div style={{
-      'background': 'white',
-      'border-radius': '12px',
-      'padding': '20px',
-      'box-shadow': '0 2px 8px rgba(0,0,0,0.1)',
-      'height': 'fit-content'
-    }}>
+    <div class="bg-white rounded-xl p-5 shadow-sm h-fit">
       {/* Header */}
-      <div style={{
-        'display': 'flex',
-        'justify-content': 'space-between',
-        'align-items': 'center',
-        'margin-bottom': '15px'
-      }}>
-        <h3 style={{ 'margin': '0', 'color': '#2c3e50' }}>
-          Event Logs ({props.events.length})
-        </h3>
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-semibold text-slate-800">Event Logs ({props.events.length})</h3>
         <button
           onClick={props.onClear}
-          style={{
-            'background': '#e74c3c',
-            'color': 'white',
-            'border': 'none',
-            'border-radius': '6px',
-            'padding': '6px 12px',
-            'font-size': '12px',
-            'cursor': 'pointer',
-            'font-weight': 'bold'
-          }}
-          onMouseOver={(e) => e.target.style.background = '#c0392b'}
-          onMouseOut={(e) => e.target.style.background = '#e74c3c'}
+          class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
         >
           Clear
         </button>
       </div>
 
       {/* Events List */}
-      <div style={{
-        'max-height': '400px',
-        'overflow-y': 'auto',
-        'border': '1px solid #e9ecef',
-        'border-radius': '6px'
-      }}>
+      <div class="max-h-96 overflow-y-auto border border-slate-200 rounded-lg">
         <Show 
           when={props.events.length > 0}
           fallback={
-            <div style={{
-              'padding': '40px 20px',
-              'text-align': 'center',
-              'color': '#95a5a6',
-              'font-style': 'italic'
-            }}>
+            <div class="p-10 text-center text-slate-500 italic">
               No events yet. Try interacting with the Pay button!
             </div>
           }
         >
           <For each={props.events}>
             {(event, index) => (
-              <div
-                style={{
-                  'padding': '12px',
-                  'border-bottom': index() < props.events.length - 1 ? '1px solid #f1f3f4' : 'none',
-                  'background': index() === 0 ? '#f8f9fa' : 'white'
-                }}
-              >
+              <div class={`p-3 border-b border-slate-100 last:border-b-0 ${index() === 0 ? 'bg-slate-50' : 'bg-white'}`}>
                 {/* Event Header */}
-                <div style={{
-                  'display': 'flex',
-                  'justify-content': 'space-between',
-                  'align-items': 'center',
-                  'margin-bottom': '8px'
-                }}>
-                  <div style={{
-                    'display': 'flex',
-                    'align-items': 'center',
-                    'gap': '8px'
-                  }}>
-                    <span style={{ 'font-size': '16px' }}>
+                <div class="flex justify-between items-center mb-2">
+                  <div class="flex items-center gap-2">
+                    <span class="text-base">
                       {getEventIcon(event.type)}
                     </span>
-                    <span style={{
-                      'font-weight': 'bold',
-                      'color': getEventColor(event.type),
-                      'text-transform': 'uppercase',
-                      'font-size': '12px'
-                    }}>
+                    <span class={getEventTypeClass(event.type)}>
                       {event.type}
                     </span>
                   </div>
-                  <span style={{
-                    'font-size': '11px',
-                    'color': '#95a5a6',
-                    'font-family': 'monospace'
-                  }}>
+                  <span class="text-xs text-slate-500 font-mono">
                     {formatTimestamp()}
                   </span>
                 </div>
 
                 {/* Event Data */}
-                <div style={{
-                  'background': '#f8f9fa',
-                  'border-radius': '4px',
-                  'padding': '8px',
-                  'font-size': '11px',
-                  'font-family': 'monospace'
-                }}>
-                  <pre style={{
-                    'margin': '0',
-                    'white-space': 'pre-wrap',
-                    'word-break': 'break-all',
-                    'color': '#495057'
-                  }}>
+                <div class="bg-slate-50 rounded p-2 text-xs font-mono">
+                  <pre class="whitespace-pre-wrap break-all text-slate-700">
                     {JSON.stringify(formatEventData(event), null, 2)}
                   </pre>
                 </div>
 
                 {/* Special handling for BOC data */}
                 <Show when={event.type === 'sent' && 'boc' in event}>
-                  <div style={{
-                    'margin-top': '8px',
-                    'padding': '6px 8px',
-                    'background': '#d4edda',
-                    'border-radius': '4px',
-                    'font-size': '10px',
-                    'color': '#155724'
-                  }}>
-                    <strong>Transaction broadcasted!</strong> BOC length: {event.boc?.length || 0} characters
+                  <div class="mt-2 p-2 bg-green-50 rounded text-green-800 text-xs">
+                    <strong>Transaction broadcasted!</strong> BOC length: {(event as any).boc?.length || 0} characters
                   </div>
                 </Show>
               </div>
@@ -182,12 +106,7 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
       </div>
 
       {/* Info */}
-      <div style={{
-        'margin-top': '10px',
-        'font-size': '12px',
-        'color': '#6c757d',
-        'text-align': 'center'
-      }}>
+      <div class="mt-3 text-xs text-slate-600 text-center">
         Events are displayed in real-time as they occur
       </div>
     </div>

@@ -7,6 +7,3 @@
 
 // Main app export
 export { App } from './App';
-
-// UI components
-export * from './components';

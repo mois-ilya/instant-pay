@@ -1,6 +1,6 @@
 import { Component, createSignal, onMount } from 'solid-js';
 import { InstantPayAPI, IPEvent } from '@tonkeeper/instantpay-sdk';
-// import { initMockWallet } from 'mock-wallet'; // TODO: Implement mock wallet
+// import { initMockWallet } from 'mock-wallet';
 import { WalletStatus } from './components/WalletStatus';
 import { EventLogs } from './components/EventLogs';
 import { DemoScenarios } from './components/DemoScenarios';
@@ -35,7 +35,7 @@ export const App: Component = () => {
       return;
     }
 
-    // TODO: Implement mock wallet injection
+    // Initialize mock wallet if no real wallet present
     // const mockWallet = initMockWallet();
     // if (mockWallet) {
     //   setWalletType('mock');
@@ -44,9 +44,6 @@ export const App: Component = () => {
     // } else {
     //   setWalletType('none');
     // }
-    
-    // For now, just set to 'none' if no real wallet
-    setWalletType('none');
   };
 
   const setupEventListeners = (api: InstantPayAPI) => {
@@ -67,35 +64,14 @@ export const App: Component = () => {
   };
 
   return (
-    <div style={{
-      'max-width': '1200px',
-      'margin': '0 auto',
-      'padding': '20px',
-      'font-family': '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif'
-    }}>
+    <div class="max-w-6xl mx-auto p-5 font-sans">
       {/* Header */}
-      <header style={{
-        'text-align': 'center',
-        'margin-bottom': '40px',
-        'padding': '20px',
-        'background': 'white',
-        'border-radius': '12px',
-        'box-shadow': '0 2px 8px rgba(0,0,0,0.1)'
-      }}>
-        <h1 style={{ 'margin': '0 0 10px 0', 'color': '#2c3e50' }}>
-          InstantPay Demo dApp
-        </h1>
-        <p style={{ 'margin': '0', 'color': '#7f8c8d', 'font-size': '16px' }}>
-          Demonstration of all InstantPay protocol features
-        </p>
+      <header class="text-center mb-10 p-5 bg-white rounded-xl shadow-sm">
+        <h1 class="text-3xl font-bold text-slate-800 mb-2">InstantPay Demo dApp</h1>
+        <p class="text-slate-600">Demonstration of all InstantPay protocol features</p>
       </header>
 
-      <div style={{
-        'display': 'grid',
-        'grid-template-columns': '1fr 1fr',
-        'gap': '20px',
-        'margin-bottom': '20px'
-      }}>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
         {/* Wallet Status */}
         <WalletStatus 
           walletType={walletType()} 
