@@ -26,3 +26,6 @@ export {
   InstantPayLimitExceededError,
   InstantPayConcurrentOperationError
 } from './errors';
+
+// Validation exports
+export { validateSetPayButtonParams } from './validation';

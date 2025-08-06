@@ -181,12 +181,12 @@ function validateJettonConfig(jetton: any): ValidationResult {
     return { valid: false, error: 'Jetton decimals must be between 0 and 18' };
   }
 
-  if (typeof jetton.instantPayLimit !== 'string') {
-    return { valid: false, error: 'Jetton instantPayLimit must be a string' };
+  if (typeof jetton.limit !== 'string') {
+    return { valid: false, error: 'Jetton limit must be a string' };
   }
 
-  if (!isValidDecimalString(jetton.instantPayLimit)) {
-    return { valid: false, error: 'Jetton instantPayLimit must be a valid decimal string' };
+  if (!isValidDecimalString(jetton.limit)) {
+    return { valid: false, error: 'Jetton limit must be a valid decimal string' };
   }
 
   return { valid: true };
@@ -202,6 +202,7 @@ function isValidDecimalString(value: string): boolean {
 /**
  * Check if string is a valid TON address
  * This is a simplified check - real implementation should use TON address validation
+ * TODO: Implement real TON address validation
  */
 function isValidTonAddress(address: string): boolean {
   // Simplified validation - should be 48 characters of base64url
