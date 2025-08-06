@@ -108,7 +108,7 @@ export interface SetPayButtonParams {
   /**
    * Button label indicating the payment action
    */
-  label: PayLabel;
+  label: 'buy' | 'unlock' | 'use' | 'get' | 'open' | 'start' | 'retry' | 'show' | 'play' | 'try';
   /**
    * Unique UUID identifying this payment invoice
    */
