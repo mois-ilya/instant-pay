@@ -6,12 +6,10 @@ Open-source repository demonstrating how dApps and wallets interact via the **In
 
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Start demo application
-npm run demo
-# or just
-npm start
+pnpm run demo
 ```
 
 Visit `http://localhost:3000` to see the demo dApp in action.
@@ -28,20 +26,20 @@ Visit `http://localhost:3000` to see the demo dApp in action.
 ## 🔧 Development
 
 ```bash
-# Build all packages
+# Install dependencies
+pnpm install
 
 # Start demo dApp
-npm run demo
-
+pnpm run demo
 
 # Run linting
-npm run lint
+pnpm run lint
 
 # Run tests
-npm run test
+pnpm run test
 
 # Clean all builds
-npm run clean
+pnpm run clean
 ```
 
 ## 📖 Documentation
@@ -71,6 +69,31 @@ The demo application showcases:
 -   ✅ Real-time event logging
 -   ✅ Connection status indicator
 -   ✅ Automatic mock wallet fallback
+-   ✅ Mock wallet localStorage control
+
+## 🎮 Mock Wallet Control
+
+The mock wallet can be controlled via localStorage or the demo UI:
+
+### Via localStorage
+```javascript
+// Force enable mock wallet (even if real wallet exists)
+localStorage.setItem('mockWalletEnabled', 'true');
+
+// Force disable mock wallet (never use mock wallet)
+localStorage.setItem('mockWalletEnabled', 'false');
+
+// Reset to default behavior (auto-detect)
+localStorage.removeItem('mockWalletEnabled');
+```
+
+### Via Demo UI
+The demo application includes a **Mock Wallet Control** panel with buttons to:
+- **Force Enable** - Always use mock wallet
+- **Force Disable** - Never use mock wallet  
+- **Reset to Auto** - Use default detection logic
+
+Changes are applied instantly and persist across browser sessions.
 
 ## 🤝 Contributing
 

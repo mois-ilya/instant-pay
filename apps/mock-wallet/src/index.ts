@@ -9,7 +9,13 @@
 export { MockWallet } from './mock-wallet';
 
 // Auto-injection functionality
-export { initMockWallet } from './injection';
+export { 
+    initMockWallet, 
+    isMockWalletActive, 
+    forceMockWallet, 
+    removeMockWallet,
+    autoInject
+} from './injection';
 
-// Mock wallet components
-export * from './components';
+// Types
+export type { InstantPayAPI } from '@tonkeeper/instantpay-sdk';

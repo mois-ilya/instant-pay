@@ -1,8 +1,8 @@
 /**
  * InstantPay SDK Core Class
  *
- * Main implementation of the InstantPay protocol for dApps and wallets.
- * Provides setPayButton(), hidePayButton(), and event handling functionality.
+ * Wrapper around window.tonkeeper?.instantPay that provides the InstantPay protocol API.
+ * This SDK acts as a bridge between dApps and the wallet's InstantPay implementation.
  */
 
 import type {
@@ -11,11 +11,16 @@ import type {
 } from '@tonkeeper/instantpay-protocol';
 import { InstantPayEmitter } from './events';
 import { validateSetPayButtonParams } from './validation';
-import {
-    InstantPayInvalidParamsError,
-    InstantPayLimitExceededError,
-    InstantPayConcurrentOperationError,
-} from './errors';
+import { InstantPayInvalidParamsError } from './errors';
+
+// Declare global type for window.tonkeeper
+declare global {
+    interface Window {
+        tonkeeper?: {
+            instantPay?: InstantPayAPI;
+        };
+    }
+}
 
 /**
  * Main InstantPay API interface
@@ -28,24 +33,49 @@ export interface InstantPayAPI {
 }
 
 /**
- * InstantPay SDK implementation
+ * InstantPay SDK implementation - wrapper around window.tonkeeper?.instantPay
  */
-export class InstantPay implements InstantPayAPI {
+export class InstantPay {
     public readonly events: InstantPayEmitter;
+    private readonly _walletAPI: InstantPayAPI;
 
-    private _config: InstantPayConfig;
-    private _activeInvoiceId: string | null = null;
+    constructor() {
+        const walletAPI = window?.tonkeeper?.instantPay;
+        if (!walletAPI) {
+            throw new Error('InstantPay SDK not initialized with wallet API');
+        }
 
-    constructor(config: InstantPayConfig) {
-        this._config = config;
+        this._walletAPI = walletAPI;
         this.events = new InstantPayEmitter();
+
+        // Forward events from wallet API to our emitter
+        this._setupEventForwardingInstantPay();
+    }
+
+    /**
+     * Setup event forwarding from wallet API to SDK emitter
+     */
+    private _setupEventForwardingInstantPay(): void {
+        console.log('[InstantPay] Setting up event forwarding from wallet API to SDK');
+        const eventTypes = ['click', 'sent', 'cancelled'] as const;
+        eventTypes.forEach((eventType) => {
+            console.log('[InstantPay] Setting up forwarding for:', eventType);
+            this._walletAPI.events.on(eventType, (event) => {
+                console.log('[InstantPay] Forwarding event from wallet API:', event);
+                this.events.emit(event);
+            });
+        });
+    }
+
+    static isAvailable(): boolean {
+        return window?.tonkeeper?.instantPay !== undefined;
     }
 
     /**
      * Get current wallet configuration
      */
     get config(): InstantPayConfig {
-        return this._config;
+        return this._walletAPI.config;
     }
 
     /**
@@ -57,43 +87,19 @@ export class InstantPay implements InstantPayAPI {
      * @throws {InstantPayConcurrentOperationError} Another operation is active
      */
     setPayButton(params: SetPayButtonParams): void {
-        // Validate parameters
-        const validation = validateSetPayButtonParams(params, this._config);
+        // Optional: Add SDK-level validation before delegating to wallet
+        const validation = validateSetPayButtonParams(
+            params,
+            this._walletAPI.config
+        );
         if (!validation.valid) {
             throw new InstantPayInvalidParamsError(
                 validation.error || 'Invalid parameters'
             );
         }
 
-        // Check for concurrent operations
-        if (
-            this._activeInvoiceId &&
-            this._activeInvoiceId !== params.invoiceId
-        ) {
-            throw new InstantPayConcurrentOperationError(
-                'Another payment operation is already active',
-                this._activeInvoiceId
-            );
-        }
-
-        // Check payment limits
-        const limitCheck = this._checkPaymentLimits(params);
-        if (!limitCheck.valid) {
-            throw new InstantPayLimitExceededError(
-                limitCheck.error!,
-                params.invoiceId,
-                limitCheck.limit!
-            );
-        }
-
-        // Set active invoice
-        this._activeInvoiceId = params.invoiceId;
-
-        // In a real implementation, this would render the overlay button
-        // For SDK, we just track the state
-        console.log(
-            `[InstantPay] Pay button set for invoice ${params.invoiceId}`
-        );
+        // Delegate to wallet API
+        this._walletAPI.setPayButton(params);
     }
 
     /**
@@ -101,72 +107,14 @@ export class InstantPay implements InstantPayAPI {
      * Idempotent - extra calls are ignored
      */
     hidePayButton(): void {
-        if (this._activeInvoiceId) {
-            const invoiceId = this._activeInvoiceId;
-            this._activeInvoiceId = null;
-
-            // Emit cancelled event for active invoice
-            this.events.emit({
-                type: 'cancelled',
-                invoiceId,
-            });
-
-            console.log(
-                `[InstantPay] Pay button hidden for invoice ${invoiceId}`
-            );
-        }
+        // Delegate to wallet API
+        this._walletAPI.hidePayButton();
     }
 
     /**
-     * Get current active invoice ID
+     * Check if wallet API is available
      */
-    get activeInvoiceId(): string | null {
-        return this._activeInvoiceId;
-    }
-
-    /**
-     * Check if payment amount exceeds limits
-     */
-    private _checkPaymentLimits(params: SetPayButtonParams): {
-        valid: boolean;
-        error?: string;
-        limit?: string;
-    } {
-        const amount = parseFloat(params.amount);
-
-        if (params.jetton) {
-            // Check jetton limits
-            const jetton = this._config.jettons.find(
-                (j) => j.address === params.jetton
-            );
-            if (!jetton) {
-                return {
-                    valid: false,
-                    error: 'Unsupported jetton',
-                    limit: '0',
-                };
-            }
-
-            const limit = parseFloat(jetton.limit);
-            if (amount > limit) {
-                return {
-                    valid: false,
-                    error: `Amount ${params.amount} exceeds jetton limit`,
-                    limit: jetton.limit,
-                };
-            }
-        } else {
-            // Check TON limits
-            const limit = parseFloat(this._config.tonLimit);
-            if (amount > limit) {
-                return {
-                    valid: false,
-                    error: `Amount ${params.amount} exceeds TON limit`,
-                    limit: this._config.tonLimit,
-                };
-            }
-        }
-
-        return { valid: true };
+    get isAvailable(): boolean {
+        return this._walletAPI !== null;
     }
 }

@@ -36,6 +36,13 @@ export const WalletStatus: Component<WalletStatusProps> = (props) => {
         {getBadgeText()}
       </div>
 
+      <button class="text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-md text-sm px-2 py-2 me-2 ml-2 mb-2 dark:bg-gray-800 dark:hover:bg-gray-700 dark:focus:ring-gray-700 dark:border-gray-700" onClick={() => {
+        localStorage.setItem('mockWalletEnabled', props.walletType === 'mock' ? 'false' : 'true');
+        window.location.reload();
+      }}>
+        Toggle Mock Wallet
+      </button>
+
       <Show when={props.config}>
         <div class="mt-4">
           <h4 class="text-lg font-medium text-slate-700 mb-3">Configuration</h4>

@@ -1,8 +1,8 @@
 /**
  * InstantPay SDK
  * 
- * Main SDK package for dApp and wallet developers to integrate with
- * the InstantPay 1.0 protocol.
+ * Main SDK package for dApp developers to integrate with
+ * the InstantPay 1.0 protocol through wallet extensions.
  */
 
 // Core SDK exports

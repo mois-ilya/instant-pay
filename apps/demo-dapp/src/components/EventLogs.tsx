@@ -1,14 +1,15 @@
-import { Component, Show, For } from 'solid-js';
-import { IPEvent } from '@tonkeeper/instantpay-sdk';
+import { Component, Show, For, onMount, createSignal } from 'solid-js';
+import { InstantPay, InstantPayEmitter, IPEvent } from '@tonkeeper/instantpay-sdk';
 
 interface EventLogsProps {
-  events: IPEvent[];
-  onClear: () => void;
+  instantPay: InstantPay | null;
 }
 
 export const EventLogs: Component<EventLogsProps> = (props) => {
-  const formatTimestamp = (timestamp: number = Date.now()) => {
-    return new Date(timestamp).toLocaleTimeString();
+  const [events, setEvents] = createSignal<(IPEvent & { timestamp: number })[]>([]);
+  
+  const formatTimestamp = (timestamp: number) => {
+    return new Date(timestamp).toISOString();
   };
 
   const getEventIcon = (type: IPEvent['type']) => {
@@ -45,13 +46,43 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
     return baseData;
   };
 
+  onMount(() => {
+    if (props.instantPay) {
+      setupEventListeners(props.instantPay.events);
+    }
+  });
+
+
+  const setupEventListeners = (events: InstantPayEmitter) => {
+    console.log('[EventLogs] Setting up listeners for events emitter:', events);
+    // Listen to all InstantPay events
+    const eventTypes: IPEvent['type'][] = ['click', 'sent', 'cancelled'];
+    
+    eventTypes.forEach((eventType) => {
+      console.log('[EventLogs] Adding listener for:', eventType);
+      events.on(eventType, (event) => {
+        console.log('[EventLogs] Received InstantPay event:', event);
+        // Add event to the beginning of the array (newest first) with timestamp
+        const eventWithTimestamp = { ...event, timestamp: Date.now() };
+        setEvents(prev => {
+          console.log('[EventLogs] Adding event to list, current count:', prev.length);
+          return [eventWithTimestamp, ...prev];
+        });
+      });
+    });
+  };
+
+  const clearEvents = () => {
+    setEvents([]);
+  };
+
   return (
     <div class="bg-white rounded-xl p-5 shadow-sm h-fit">
       {/* Header */}
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-xl font-semibold text-slate-800">Event Logs ({props.events.length})</h3>
+        <h3 class="text-xl font-semibold text-slate-800">Event Logs ({events.length})</h3>
         <button
-          onClick={props.onClear}
+          onClick={clearEvents}
           class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
         >
           Clear
@@ -61,14 +92,14 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
       {/* Events List */}
       <div class="max-h-96 overflow-y-auto border border-slate-200 rounded-lg">
         <Show 
-          when={props.events.length > 0}
+          when={events().length > 0}
           fallback={
             <div class="p-10 text-center text-slate-500 italic">
               No events yet. Try interacting with the Pay button!
             </div>
           }
         >
-          <For each={props.events}>
+          <For each={events()}>
             {(event, index) => (
               <div class={`p-3 border-b border-slate-100 last:border-b-0 ${index() === 0 ? 'bg-slate-50' : 'bg-white'}`}>
                 {/* Event Header */}
@@ -82,7 +113,7 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
                     </span>
                   </div>
                   <span class="text-xs text-slate-500 font-mono">
-                    {formatTimestamp()}
+                    {formatTimestamp(event.timestamp)}
                   </span>
                 </div>
 
@@ -92,13 +123,6 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
                     {JSON.stringify(formatEventData(event), null, 2)}
                   </pre>
                 </div>
-
-                {/* Special handling for BOC data */}
-                <Show when={event.type === 'sent' && 'boc' in event}>
-                  <div class="mt-2 p-2 bg-green-50 rounded text-green-800 text-xs">
-                    <strong>Transaction broadcasted!</strong> BOC length: {(event as any).boc?.length || 0} characters
-                  </div>
-                </Show>
               </div>
             )}
           </For>

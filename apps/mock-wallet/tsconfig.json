@@ -6,8 +6,10 @@
     "declaration": true,
     "emitDeclarationOnly": false,
     "noEmit": false,
+    "allowImportingTsExtensions": false,
     "jsx": "preserve",
-    "jsxImportSource": "solid-js"
+    "jsxImportSource": "solid-js",
+    "composite": true
   },
   "include": ["src/**/*"],
   "exclude": ["dist", "node_modules"],

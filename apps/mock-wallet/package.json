@@ -1,13 +1,20 @@
 {
   "name": "mock-wallet",
   "version": "0.1.0",
-  "description": "Mock wallet implementation for InstantPay protocol testing",
+  "description": "Mock Tonkeeper wallet for InstantPay testing and development",
+  "private": true,
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "scripts": {
-    "build": "vite build",
-    "dev": "vite",
-    "preview": "vite preview",
+    "build": "tsc",
+    "dev": "tsc --watch",
     "clean": "rm -rf dist"
   },
   "dependencies": {
@@ -16,19 +23,14 @@
     "solid-js": "^1.9.7"
   },
   "devDependencies": {
-    "typescript": "^5.9.2",
-    "vite": "^7.0.6",
-    "vite-plugin-solid": "^2.11.8"
+    "typescript": "^5.9.2"
   },
-  "files": [
-    "dist"
-  ],
   "keywords": [
     "tonkeeper",
     "instant-pay",
     "mock",
     "wallet",
-    "solid"
+    "testing"
   ],
   "license": "MIT"
 }
