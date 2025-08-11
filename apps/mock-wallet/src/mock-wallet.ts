@@ -40,9 +40,11 @@ const MOCK_CONFIG: InstantPayConfig = {
     labels: ['buy', 'unlock', 'use', 'get', 'open', 'start', 'retry', 'show', 'play', 'try']
 };
 
+
+
 /**
  * Mock Wallet Class
- * Implements full InstantPay API with UI overlay
+ * Implements InstantPay API with simple pay button for mobile dApp browsers
  */
 export class MockWallet implements InstantPayAPI {
     public readonly config: InstantPayConfig;
@@ -50,6 +52,7 @@ export class MockWallet implements InstantPayAPI {
 
     private _activeParams: SetPayButtonParams | null = null;
     private _overlayElement: HTMLElement | null = null;
+    private _paymentInProgress: boolean = false;
 
     constructor(config: InstantPayConfig = MOCK_CONFIG) {
         this.config = config;
@@ -71,10 +74,10 @@ export class MockWallet implements InstantPayAPI {
             );
         }
 
-        // Check for concurrent operations
-        if (this._activeParams && this._activeParams.invoiceId !== params.invoiceId) {
+        // Check for concurrent operations - only if payment is in progress (clicked but not sent)
+        if (this._paymentInProgress && this._activeParams && this._activeParams.invoiceId !== params.invoiceId) {
             throw new InstantPayConcurrentOperationError(
-                'Another payment operation is already active',
+                'Another payment operation is already in progress',
                 this._activeParams.invoiceId
             );
         }
@@ -82,6 +85,13 @@ export class MockWallet implements InstantPayAPI {
         // Check payment limits
         const limitCheck = this._checkPaymentLimits(params);
         if (!limitCheck.valid) {
+            // If there's an active button, hide it first
+            if (this._activeParams) {
+                this._hideOverlay();
+                this._activeParams = null;
+                this._paymentInProgress = false;
+            }
+            
             throw new InstantPayLimitExceededError(
                 limitCheck.error!,
                 params.invoiceId,
@@ -91,6 +101,7 @@ export class MockWallet implements InstantPayAPI {
 
         // Store active params and show overlay
         this._activeParams = params;
+        this._paymentInProgress = false; // Reset payment progress state
         this._showPayButtonOverlay(params);
     }
 
@@ -101,6 +112,7 @@ export class MockWallet implements InstantPayAPI {
         if (this._activeParams) {
             const invoiceId = this._activeParams.invoiceId;
             this._activeParams = null;
+            this._paymentInProgress = false;
             this._hideOverlay();
 
             // Emit cancelled event
@@ -165,24 +177,25 @@ export class MockWallet implements InstantPayAPI {
     }
 
     /**
-     * Show the pay button overlay
+     * Show the simplified pay button for mobile dApp browsers
      */
     private _showPayButtonOverlay(params: SetPayButtonParams): void {
         // Remove existing overlay
         this._hideOverlay();
 
-        // Create overlay container
+        // Create minimal pay button
         this._overlayElement = document.createElement('div');
-        this._overlayElement.className = 'mock-wallet-overlay';
-        this._overlayElement.innerHTML = this._createOverlayHTML(params);
+        this._overlayElement.className = 'mock-wallet-pay-button';
+        this._overlayElement.innerHTML = this._createSimpleButtonHTML(params);
         
-        // Add to body
+        // Add to body and adjust page layout
         document.body.appendChild(this._overlayElement);
+        document.body.classList.add('mock-wallet-active');
 
         // Add event listeners
-        this._attachOverlayEvents(params);
+        this._attachButtonEvents(params);
 
-        console.log('[MockWallet] Pay button overlay shown for invoice:', params.invoiceId);
+        console.log('[MockWallet] Simple pay button shown for invoice:', params.invoiceId);
     }
 
     /**
@@ -192,83 +205,52 @@ export class MockWallet implements InstantPayAPI {
         if (this._overlayElement) {
             this._overlayElement.remove();
             this._overlayElement = null;
+            document.body.classList.remove('mock-wallet-active');
         }
     }
 
     /**
-     * Create overlay HTML
+     * Create simple button HTML for mobile dApp browsers
      */
-    private _createOverlayHTML(params: SetPayButtonParams): string {
+    private _createSimpleButtonHTML(params: SetPayButtonParams): string {
         const currency = params.jetton 
             ? this.config.jettons.find(j => j.address === params.jetton)?.symbol || 'TOKEN'
             : 'TON';
             
         return `
-            <div class="mock-wallet-backdrop">
-                <div class="mock-wallet-modal">
-                    <div class="mock-wallet-header">
-                        <div class="mock-wallet-badge">Mock Wallet</div>
-                        <button class="mock-wallet-close" data-action="close">×</button>
-                    </div>
-                    
-                    <div class="mock-wallet-content">
-                        <h3>Confirm Payment</h3>
-                        <div class="mock-wallet-amount">
-                            ${params.amount} ${currency}
-                        </div>
-                        <div class="mock-wallet-details">
-                            <div><strong>Action:</strong> ${params.label}</div>
-                            <div><strong>Recipient:</strong> ${params.recipient.slice(0, 8)}...${params.recipient.slice(-6)}</div>
-                            <div><strong>Network:</strong> ${this.config.network}</div>
-                            <div><strong>Invoice ID:</strong> ${params.invoiceId}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="mock-wallet-actions">
-                        <button class="mock-wallet-btn mock-wallet-btn-cancel" data-action="cancel">
-                            Cancel
-                        </button>
-                        <button class="mock-wallet-btn mock-wallet-btn-confirm" data-action="confirm">
-                            ${params.label.charAt(0).toUpperCase() + params.label.slice(1)} Now
-                        </button>
-                    </div>
-                </div>
+            <div class="mock-wallet-simple-container">
+                <button class="mock-wallet-simple-btn" data-action="pay">
+                    ${params.label.charAt(0).toUpperCase() + params.label.slice(1)} ${params.amount} ${currency}
+                </button>
             </div>
         `;
     }
 
     /**
-     * Attach event listeners to overlay
+     * Attach event listeners to simple pay button
      */
-    private _attachOverlayEvents(params: SetPayButtonParams): void {
+    private _attachButtonEvents(params: SetPayButtonParams): void {
         if (!this._overlayElement) return;
 
-        // Emit click event when overlay is shown
-        this.events.emit({
-            type: 'click',
-            invoiceId: params.invoiceId
-        });
-
-        // Handle button clicks
+        // Handle button click
         this._overlayElement.addEventListener('click', (e) => {
             const target = e.target as HTMLElement;
             const action = target.getAttribute('data-action');
 
-            if (action === 'confirm') {
+            if (action === 'pay') {
+                // Mark payment as in progress
+                this._paymentInProgress = true;
+                
+                // Emit click event
+                this.events.emit({
+                    type: 'click',
+                    invoiceId: params.invoiceId
+                });
+                
+                // Auto-confirm payment for simplified mobile experience
                 this._handleConfirm(params);
-            } else if (action === 'cancel' || action === 'close') {
-                this._handleCancel(params);
             }
         });
-
-        // Handle ESC key
-        const escHandler = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                this._handleCancel(params);
-                document.removeEventListener('keydown', escHandler);
-            }
-        };
-        document.addEventListener('keydown', escHandler);
     }
 
     /**
@@ -276,6 +258,7 @@ export class MockWallet implements InstantPayAPI {
      */
     private _handleConfirm(params: SetPayButtonParams): void {
         this._activeParams = null;
+        this._paymentInProgress = false; // Reset payment progress
         this._hideOverlay();
 
         // Generate mock BOC (transaction hash)
@@ -291,21 +274,7 @@ export class MockWallet implements InstantPayAPI {
         console.log('[MockWallet] Payment confirmed for invoice:', params.invoiceId);
     }
 
-    /**
-     * Handle payment cancellation
-     */
-    private _handleCancel(params: SetPayButtonParams): void {
-        this._activeParams = null;
-        this._hideOverlay();
 
-        // Emit cancelled event
-        this.events.emit({
-            type: 'cancelled',
-            invoiceId: params.invoiceId
-        });
-
-        console.log('[MockWallet] Payment cancelled for invoice:', params.invoiceId);
-    }
 
     /**
      * Generate mock BOC for testing
@@ -321,7 +290,7 @@ export class MockWallet implements InstantPayAPI {
     }
 
     /**
-     * Inject CSS styles for the overlay
+     * Inject CSS styles for the simplified pay button
      */
     private _injectStyles(): void {
         const styleId = 'mock-wallet-styles';
@@ -330,168 +299,89 @@ export class MockWallet implements InstantPayAPI {
         const style = document.createElement('style');
         style.id = styleId;
         style.textContent = `
-            .mock-wallet-overlay {
+            .mock-wallet-pay-button {
                 position: fixed;
-                top: 0;
+                bottom: 0;
                 left: 0;
-                width: 100%;
-                height: 100%;
+                right: 0;
                 z-index: 999999;
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+                border-top: 1px solid rgba(0, 0, 0, 0.1);
+                padding: env(safe-area-inset-bottom, 0px) 0 0 0;
             }
             
-            .mock-wallet-backdrop {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.5);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                animation: mock-wallet-fade-in 0.2s ease;
+            .mock-wallet-simple-container {
+                padding: 12px 16px;
             }
             
-            .mock-wallet-modal {
-                background: white;
-                border-radius: 12px;
-                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-                max-width: 400px;
-                width: 90%;
-                max-height: 90vh;
-                overflow: hidden;
-                animation: mock-wallet-slide-in 0.3s ease;
-            }
-            
-            .mock-wallet-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
+            .mock-wallet-simple-btn {
+                background: #007AFF;
+                color: white;
+                border: none;
+                border-radius: 10px;
                 padding: 16px 20px;
-                border-bottom: 1px solid #e9ecef;
-                background: #f8f9fa;
-            }
-            
-            .mock-wallet-badge {
-                background: #ff8c00;
-                color: white;
-                padding: 4px 12px;
-                border-radius: 12px;
-                font-size: 12px;
-                font-weight: bold;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-            }
-            
-            .mock-wallet-close {
-                background: none;
-                border: none;
-                font-size: 24px;
+                font-size: 17px;
+                font-weight: 600;
                 cursor: pointer;
-                color: #6c757d;
-                padding: 0;
-                width: 30px;
-                height: 30px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border-radius: 50%;
-                transition: background 0.2s;
-            }
-            
-            .mock-wallet-close:hover {
-                background: rgba(0, 0, 0, 0.1);
-            }
-            
-            .mock-wallet-content {
-                padding: 24px 20px;
+                width: 100%;
+                transition: all 0.2s ease;
+                user-select: none;
+                -webkit-tap-highlight-color: transparent;
+                box-shadow: none;
                 text-align: center;
+                letter-spacing: -0.02em;
             }
             
-            .mock-wallet-content h3 {
-                margin: 0 0 16px 0;
-                color: #2c3e50;
-                font-size: 18px;
+            .mock-wallet-simple-btn:hover {
+                background: #0056b3;
             }
             
-            .mock-wallet-amount {
-                font-size: 32px;
-                font-weight: bold;
-                color: #0088cc;
-                margin-bottom: 20px;
-                font-family: monospace;
+            .mock-wallet-simple-btn:active {
+                background: #004494;
+                transform: scale(0.98);
             }
             
-            .mock-wallet-details {
-                background: #f8f9fa;
-                border-radius: 8px;
-                padding: 16px;
-                text-align: left;
-                font-size: 14px;
-                line-height: 1.5;
-                color: #495057;
+            /* Dark mode support */
+            @media (prefers-color-scheme: dark) {
+                .mock-wallet-pay-button {
+                    background: rgba(28, 28, 30, 0.95);
+                    border-top: 1px solid rgba(255, 255, 255, 0.1);
+                }
+                
+                .mock-wallet-simple-btn {
+                    background: #0A84FF;
+                }
+                
+                .mock-wallet-simple-btn:hover {
+                    background: #0066CC;
+                }
+                
+                .mock-wallet-simple-btn:active {
+                    background: #004499;
+                }
             }
             
-            .mock-wallet-details > div {
-                margin-bottom: 8px;
-            }
-            
-            .mock-wallet-details > div:last-child {
-                margin-bottom: 0;
-            }
-            
-            .mock-wallet-actions {
-                display: flex;
-                gap: 12px;
-                padding: 20px;
-                border-top: 1px solid #e9ecef;
-            }
-            
-            .mock-wallet-btn {
-                flex: 1;
-                padding: 12px 20px;
-                border: none;
-                border-radius: 8px;
-                font-size: 16px;
-                font-weight: bold;
-                cursor: pointer;
-                transition: all 0.2s;
-                text-transform: capitalize;
-            }
-            
-            .mock-wallet-btn-cancel {
-                background: #6c757d;
-                color: white;
-            }
-            
-            .mock-wallet-btn-cancel:hover {
-                background: #5a6268;
-            }
-            
-            .mock-wallet-btn-confirm {
-                background: #28a745;
-                color: white;
-            }
-            
-            .mock-wallet-btn-confirm:hover {
-                background: #218838;
-            }
-            
-            @keyframes mock-wallet-fade-in {
-                from { opacity: 0; }
-                to { opacity: 1; }
-            }
-            
-            @keyframes mock-wallet-slide-in {
+            /* Animation for appearance */
+            @keyframes mock-wallet-button-slide-up {
                 from { 
                     opacity: 0;
-                    transform: translateY(-20px) scale(0.95);
+                    transform: translateY(100%);
                 }
                 to { 
                     opacity: 1;
-                    transform: translateY(0) scale(1);
+                    transform: translateY(0);
                 }
+            }
+            
+            .mock-wallet-pay-button {
+                animation: mock-wallet-button-slide-up 0.3s ease-out;
+            }
+            
+            /* Ensure content doesn't get hidden behind the button */
+            body.mock-wallet-active {
+                padding-bottom: 88px;
             }
         `;
         

@@ -89,6 +89,18 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
         invoiceId: crypto.randomUUID()
       },
       expectedOutcome: 'Should show Pay button with "try" label'
+    },
+    {
+      id: 'hide-on-limit-exceeded',
+      title: 'Hide Button on Limit Exceeded',
+      description: 'Show button first, then try to exceed limit - button should hide',
+      params: {
+        amount: '0.1', // Valid amount initially
+        recipient: DEMO_RECIPIENT,
+        label: 'buy',
+        invoiceId: crypto.randomUUID()
+      },
+      expectedOutcome: 'Should show button first, then hide it when limit exceeded'
     }
   ];
 
@@ -110,10 +122,39 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
 
       console.log('Running scenario:', scenario.title, params);
       
-      props.instantPay.setPayButton(params);
-      
-      // Success - button should be visible
-      console.log('Scenario executed successfully');
+      // Special handling for hide-on-limit-exceeded scenario
+      if (scenario.id === 'hide-on-limit-exceeded') {
+        // First, show a valid button
+        console.log('Step 1: Showing valid button');
+        props.instantPay.setPayButton(params);
+        
+        // Wait a moment to let user see the button
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Then try to show a button with exceeded limit - this should hide the first button
+        console.log('Step 2: Trying to show button with exceeded limit');
+        const exceedingParams = {
+          ...params,
+          amount: '100', // This exceeds the limit
+          invoiceId: crypto.randomUUID() // New invoice ID
+        };
+        
+        try {
+          props.instantPay.setPayButton(exceedingParams);
+        } catch (limitErr) {
+          if (limitErr instanceof InstantPayLimitExceededError) {
+            console.log('Expected: Button was hidden due to limit exceeded');
+            setError(`Expected behavior: Button hidden due to limit exceeded - ${limitErr.message}`);
+          } else {
+            throw limitErr;
+          }
+        }
+      } else {
+        props.instantPay.setPayButton(params);
+        
+        // Success - button should be visible
+        console.log('Scenario executed successfully');
+      }
       
     } catch (err) {
       console.error('Scenario error:', err);
