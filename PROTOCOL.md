@@ -72,6 +72,14 @@ export interface AppMeta {
 export interface Handshake {
   protocolVersion: InstantPaySemver;
   wallet: { name: string };            // без версии/адресов
+  /** Описание ассетов для которых достпуна мгновенная оплата */
+  capabilities?: {
+    instant: Array<{
+      asset: { type: 'ton' } | { type: 'jetton'; master: string };
+      /** Лимит на одну операцию, строка-число в тех же единицах, что amount */
+      limit: string;
+    }>;
+  };
 }
 ```
 
@@ -85,9 +93,6 @@ export interface Handshake {
 
   * `INVALID_PARAMS` — нарушены валидационные правила.
   * `ACTIVE_OPERATION` — изменение после клика запрещено (см. § 6.4).
-* `cancel()` может бросить:
-
-  * `ACTIVE_OPERATION` — если уже был клик и операция не завершена.
 * `requestPayment()` (если реализован) может вернуть `cancelled` или бросить `NOT_SUPPORTED`.
 
 Коды ошибок — строковые, в `Error.message` (без сложной иерархии).
@@ -184,6 +189,7 @@ export type CancelReason = 'user' | 'app' | 'wallet' | 'replaced' | 'expired' | 
 ```ts
 export type InstantPayEvent =
   | { type: 'ready'; handshake: Handshake }                    // по завершении handshake
+  | { type: 'show'; invoiceId: string }                        // кнопка отрисована и готова к нажатию
   | { type: 'click'; invoiceId: string }                       // пользователь нажал кнопку
   | { type: 'sent'; invoiceId: string; boc: string }           // сообщение сформировано и отправлено
   | { type: 'cancelled'; invoiceId: string; reason?: CancelReason }
@@ -207,7 +213,7 @@ export interface InstantPayEventEmitter {
 
 ### 6.1. Жизненный цикл
 
-1. `setPayButton(params)` → рендер кнопки.
+1. `setPayButton(params)` → рендер кнопки → `show`.
 2. Пользователь нажимает → `click`.
 3. Кошелёк либо отправляет сразу (если возможно) → `sent(boc)`,
    либо показывает подтверждение → итог всё равно `sent(boc)` или `cancelled('user'|'wallet')`.
@@ -231,7 +237,15 @@ export interface InstantPayEventEmitter {
 
 ### 6.5. `hidePayButton()`
 
-* Прячет UI. Состояние операции не меняет.
+* Идемпотентно прячет UI.
+* Если есть активный счёт — операция отменяется с `cancelled('app')` и активный счёт сбрасывается.
+
+### 6.6. Невалидные параметры
+
+* При невалидных `setPayButton(params)` кошелёк обязан:
+  * скрыть текущую кнопку, сбросить активный счёт;
+  * эмитить `cancelled { invoiceId: <активный>, reason: 'wallet' }` (если активный счёт был);
+  * бросить ошибку `INVALID_PARAMS`.
 
 ---
 
@@ -256,18 +270,18 @@ export interface InstantPayEventEmitter {
 `amountToken` — десятичная сумма токена (кошелёк округлит до min units).
 `exp` добавляется, если есть `expiresAt`.
 
-**Payload (`bin`, опционально):** base64‑кодированный бинарный cell **InstantPay‑payload v1**:
+**Payload (`bin`, опционально):** base64‑кодированный бинарный cell следующего формата:
 
 ```
-cell ip10_payload$IP10
-  magic:uint32 = 0x49503130  ; ASCII 'IP10'
-  invoice_id:uint128         ; UUID v4
+cell ip_invoice_payload
+  op:uint32            = 0x7aa23eb5    ; INVOICE_OP_CODE
+  invoice_id:uint128                   ; UUID v4 (без дефисов)
   has_adnl:uint1
-  adnl:bits256?              ; при has_adnl=1
-= IP10Payload;
+  adnl:bits256?                        ; при has_adnl=1 (hex64)
+= IPInvoicePayload;
 ```
 
-* Кошелёк, получая диплинк, **может** встроить этот payload как комментарий/оплату‑payload к выходящему сообщению (тонкости реализации остаются за кошельком).
+* Кошелёк, получая диплинк, **может** встроить этот payload как комментарий/оплату‑payload к исходящему сообщению (тонкости реализации остаются за кошельком).
 * Если кошелёк игнорирует `bin`, операция всё равно функциональна; dApp начнёт отслеживание по паре `(recipient, amount, asset, time‑window)`.
 
 ### 7.2. Колбэк рендеринга фолбэка
@@ -301,6 +315,11 @@ type FallbackCallback = (ctx: {
 
 Нарушения → `INVALID_PARAMS`.
 
+Где применяется валидация:
+
+* При inject‑пути валидирует и применяет ограничения сам кошелёк (см. §6.6).
+* При фолбэке (когда inject недоступен) минимальная валидация выполняется SDK до построения диплинка.
+
 ---
 
 ## 9. SDK для dApp (обёртка над inject + фолбэк)
@@ -318,7 +337,7 @@ export class InstantPaySDK {
     if (this.api) {
       this.hs = this.api.handshake({ name: this._detectAppName(), url: location.origin });
       // форвардинг событий
-      (['ready','click','sent','cancelled'] as const).forEach(t => {
+      (['ready', 'show', 'click', 'sent', 'cancelled', 'handoff'] as const).forEach(t => {
         this.api!.events.on(t, (e: any) => this.events.emit(e));
       });
       // сводный ready
@@ -330,13 +349,11 @@ export class InstantPaySDK {
   get handshake()  { return this.hs; }
 
   setPayButton(params: PayButtonParams, opts?: { onUnsupported?: FallbackCallback }) {
-    // 1) валидация (Ajv/Schema)
-    this._validate(params);
-
-    // 2) inject‑путь
+    // inject‑путь — делегируем кошельку (он валидирует и управляет UI)
     if (this.api) { this.api.setPayButton(params); return; }
 
-    // 3) фолбэк
+    // фолбэк — минимальная валидация и построение диплинка
+    this._validate(params);
     const url = this._buildDeepLink(params.request);
     const scheme = this._isMobile() ? 'ton' : 'https';
     const open = () => {
