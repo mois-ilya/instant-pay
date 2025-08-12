@@ -47,7 +47,7 @@ export interface InstantPayAPI {
   /** Создать/обновить нативную кнопку. См. правила замены в §6.3. */
   setPayButton(params: PayButtonParams): void;
 
-  /** Скрыть кнопку (идемпотентно). Не меняет состояние активной операции. */
+  /** Скрыть кнопку (идемпотентно). Полностью отменяет активную операцию. */
   hidePayButton(): void;
 
   /** (Опционально) Прямой сценарий без кнопки. Второстепенно. */
@@ -58,9 +58,6 @@ export interface InstantPayAPI {
 
   /** Активная операция, если есть. */
   getActive(): { invoiceId: string } | null;
-
-  /** Отмена до клика (идемпотентно). После клика — запрещено. */
-  cancel(invoiceId?: string): void;
 
   /** События. */
   events: InstantPayEventEmitter;
