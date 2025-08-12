@@ -24,7 +24,7 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
   const [error, setError] = createSignal<string | null>(null);
 
   // Sample TON address for demo
-  const DEMO_RECIPIENT = 'EQC3dNlesgVD8YbAazcauIrXBPfiVhMMr5YYk2in0Mtsz0Bz';
+  const DEMO_RECIPIENT = 'UQCae11h9N5znylEPRjmuLYGvIwnxkcCw4zVW4BJjVASi5eL';
 
   const scenarios: ScenarioConfig[] = [
     {

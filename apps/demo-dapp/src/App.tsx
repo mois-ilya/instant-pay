@@ -29,21 +29,23 @@ export const App: Component = () => {
             initMockWallet();
         }
 
-        const instantPayInitOptions: InstantPayInitOptions = {onFallbackShow: ({ openDeeplink, payButtonParams }) => {
-            const btn = document.getElementById('fallback') as HTMLButtonElement | null;
-            if (!btn) return;
+        const instantPayInitOptions: InstantPayInitOptions = {onFallbackShow: ({ openDeeplink, payButtonParams, deeplinkUrl, deeplinkScheme }) => {
+            const a = document.getElementById('fallback') as HTMLAnchorElement | null;
+            if (!a) return;
             const { label, request } = payButtonParams;
             const currency = request.asset.type === 'jetton' ? 'TOKEN' : 'TON';
             const cap = label.charAt(0).toUpperCase() + label.slice(1);
-            btn.textContent = `${cap} ${request.amount} ${currency}`;
-            btn.onclick = openDeeplink;
-            btn.classList.remove('hidden');
+            a.textContent = `${cap} ${request.amount} ${currency}`;
+            // prefer https deeplink in anchor; click handler keeps popup flow
+            a.href = deeplinkScheme === 'https' ? deeplinkUrl : deeplinkUrl.replace(/^ton:\/\//, 'https://app.tonkeeper.com/');
+            a.onclick = (e) => { e.preventDefault(); openDeeplink(); };
+            a.classList.remove('hidden');
         },
         onFallbackHide: () => {
-            const btn = document.getElementById('fallback') as HTMLButtonElement | null;
-            if (!btn) return;
-            btn.onclick = null;
-            btn.classList.add('hidden');
+            const a = document.getElementById('fallback') as HTMLAnchorElement | null;
+            if (!a) return;
+            a.onclick = null;
+            a.classList.add('hidden');
         }};
 
         const _instantPay = new InstantPay(instantPayInitOptions);
@@ -77,12 +79,15 @@ export const App: Component = () => {
 
                 {/* Fallback button (appears when no wallet is injected) */}
                 <div class="mb-5">
-                    <button
+                    <a
                         id="fallback"
-                        class="hidden w-full bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-lg font-semibold text-sm transition-colors"
+                        href="#"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="hidden block w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-lg font-semibold text-sm transition-colors"
                     >
                         Open in Tonkeeper
-                    </button>
+                    </a>
                 </div>
 
                 {/* Scenarios and Logs: scenarios first, then logs on mobile; side-by-side on desktop */}

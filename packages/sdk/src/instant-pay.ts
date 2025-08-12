@@ -88,6 +88,7 @@ export class InstantPaySDK {
   private hs?: Handshake;
   private onFallbackShow?: (ctx: FallbackContext) => void;
   private onFallbackHide?: () => void;
+  private activeFallback: PayButtonParams | null = null;
 
   constructor(opts?: InstantPayInitOptions) {
     this.events = new InstantPayEmitter();
@@ -117,32 +118,71 @@ export class InstantPaySDK {
   // Capabilities are provided in handshake
 
   setPayButton(params: PayButtonParams): void {
-    // Inject path: delegate validation to wallet implementation
-    if (this.api) {
-      this.api.setPayButton(params);
-      return;
+    if (this.api) { this._setInjectedPayButton(params); return; }
+    this._setFallbackPayButton(params);
+  }
+
+  hidePayButton(): void {
+    // Hide custom UI first
+    if (this.activeFallback) {
+      const prevId = this.activeFallback.request.invoiceId;
+      try { this.onFallbackHide?.(); } catch { /* noop */ }
+      this.events.emit({ type: 'cancelled', invoiceId: prevId, reason: 'app' });
+      this.activeFallback = null;
+    } else {
+      try { this.onFallbackHide?.(); } catch { /* noop */ }
+    }
+    this.api?.hidePayButton();
+  }
+
+  private _setInjectedPayButton(params: PayButtonParams): void {
+    // Delegate validation and UI to the injected wallet implementation
+    this.api!.setPayButton(params);
+  }
+
+  private _setFallbackPayButton(params: PayButtonParams): void {
+    // Handle replacement semantics prior to validation/show
+    if (this.activeFallback) {
+      const prevId = this.activeFallback.request.invoiceId;
+      if (prevId !== params.request.invoiceId) {
+        this._cancelActiveFallback('replaced');
+      }
     }
 
-    // Fallback path: build deep link and provide to callback
-    // Validate on fallback since no wallet is present to validate
+    // Validate since no wallet is present
     const validation = validatePayButtonParams(params);
     if (!validation.valid) {
+      if (this.activeFallback) {
+        this._cancelActiveFallback('app');
+      }
       throw new InstantPayInvalidParamsError(validation.error ?? 'INVALID_PARAMS');
     }
+
     const { url, scheme, bin } = this._buildDeepLink(params.request);
+
     const openDeeplink = () => {
-      // mirror wallet semantics: emit click before handoff
+      // Emit click before handoff; check expiry first
+      const nowSec = Math.floor(Date.now() / 1000);
+      if (params.request.expiresAt && params.request.expiresAt <= nowSec) {
+        this._cancelActiveFallback('expired');
+        return;
+      }
       this.events.emit({ type: 'click', invoiceId: params.request.invoiceId });
-      window.location.href = url;
-      this.events.emit({ type: 'handoff', invoiceId: params.request.invoiceId, url, scheme });
+
+      // Force HTTPS deeplink for compatibility; try new tab first
+      const openUrl = scheme === 'https' ? url : url.replace(/^ton:\/\//, 'https://app.tonkeeper.com/');
+      const win = window.open(openUrl, '_blank', 'noopener,noreferrer');
+      if (!win) {
+        window.location.href = openUrl;
+      }
+      this.events.emit({ type: 'handoff', invoiceId: params.request.invoiceId, url: openUrl, scheme: 'https' });
+      // Hide fallback UI after handoff
+      try { this.onFallbackHide?.(); } catch { /* noop */ }
+      this.activeFallback = null;
     };
 
-    // hide previous custom UI (if any) before showing a new one
-    try { this.onFallbackHide?.(); } catch { /* noop */ }
-
-    // emit 'show' when fallback UI becomes available
+    // Emit show and present fallback UI
     this.events.emit({ type: 'show', invoiceId: params.request.invoiceId });
-
     this.onFallbackShow?.({
       payButtonParams: params,
       deeplinkUrl: url,
@@ -150,12 +190,15 @@ export class InstantPaySDK {
       openDeeplink,
       invoiceBocBase64: bin
     });
+    this.activeFallback = params;
   }
 
-  hidePayButton(): void {
-    // Hide custom UI first
+  private _cancelActiveFallback(reason: CancelReason): void {
+    if (!this.activeFallback) return;
+    const invoiceId = this.activeFallback.request.invoiceId;
     try { this.onFallbackHide?.(); } catch { /* noop */ }
-    this.api?.hidePayButton();
+    this.events.emit({ type: 'cancelled', invoiceId, reason });
+    this.activeFallback = null;
   }
 
   async requestPayment(request: PaymentRequest, opts?: { signal?: AbortSignal }): Promise<RequestPaymentResult> {
@@ -187,9 +230,12 @@ export class InstantPaySDK {
     const bin = invoicePayload.toBoc().toString("base64");
 
     if (request.asset.type === 'jetton') params.set('jetton', request.asset.master);
-    params.set('amount', request.amount);
+    // TODO: use decimals from asset
+    const assetDecimals = request.asset.type === 'ton' ? 1e9 : 1e6;
+    const nanoAmount = Number(request.amount) * assetDecimals;
+    params.set('amount', nanoAmount.toString());
     params.set('bin', bin);
-    if (request.expiresAt) params.set('exp', String(request.expiresAt));
+    // if (request.expiresAt) params.set('exp', String(request.expiresAt));
 
     const url = `${base}transfer/${request.recipient}?${params.toString()}`;
     return { url, scheme, bin };
