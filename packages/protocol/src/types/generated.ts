@@ -17,6 +17,10 @@ export type InstantPayEvent =
       };
     }
   | {
+      type: 'show';
+      invoiceId: string;
+    }
+  | {
       type: 'click';
       invoiceId: string;
     }

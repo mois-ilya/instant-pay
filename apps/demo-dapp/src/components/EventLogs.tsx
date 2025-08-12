@@ -1,4 +1,4 @@
-import { Component, Show, For, onMount, createSignal } from 'solid-js';
+import { Component, Show, For, createSignal, createEffect, onCleanup } from 'solid-js';
 import { InstantPay, InstantPayEmitter, InstantPayEvent } from '@tonkeeper/instantpay-sdk';
 
 interface EventLogsProps {
@@ -6,7 +6,7 @@ interface EventLogsProps {
 }
 
 export const EventLogs: Component<EventLogsProps> = (props) => {
-  const [events, setEvents] = createSignal<(InstantPayEvent & { timestamp: number })[]>([]);
+  const [events, setEvents] = createSignal<((InstantPayEvent) & { timestamp: number })[]>([]);
   
   const formatTimestamp = (timestamp: number) => {
     return new Date(timestamp).toISOString();
@@ -16,6 +16,8 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
     switch (type) {
       case 'ready':
         return '🚦';
+      case 'show':
+        return '🟩';
       case 'click':
         return '👆';
       case 'sent':
@@ -33,6 +35,8 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
     switch (type) {
       case 'ready':
         return 'font-bold text-purple-600 uppercase text-xs';
+      case 'show':
+        return 'font-bold text-emerald-600 uppercase text-xs';
       case 'click':
         return 'font-bold text-blue-600 uppercase text-xs';
       case 'sent':
@@ -47,27 +51,60 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
   };
 
   const formatEventData = (event: InstantPayEvent) => {
-    if (event.type === 'ready') return event.handshake;
-    if (event.type === 'handoff') return { invoiceId: event.invoiceId, url: event.url, scheme: event.scheme };
-    if (event.type === 'sent') return { invoiceId: event.invoiceId, boc: event.boc };
-    return { invoiceId: (event as any).invoiceId };
+    switch (event.type) {
+      case 'ready':
+        return event.handshake;
+      case 'handoff':
+        return { invoiceId: event.invoiceId, url: event.url, scheme: event.scheme };
+      case 'sent':
+        return { invoiceId: event.invoiceId, boc: event.boc };
+      case 'click':
+      case 'cancelled':
+      case 'show':
+        return { invoiceId: event.invoiceId };
+      default:
+        return {} as never;
+    }
   };
 
-  onMount(() => {
-    if (props.instantPay) {
-      setupEventListeners(props.instantPay.events);
+  let cleanups: Array<() => void> = [];
+
+  createEffect(() => {
+    // Dispose previous listeners
+    for (const c of cleanups) {
+      try { c(); } catch { /* noop */ }
+    }
+    cleanups = [];
+
+    const sdk = props.instantPay;
+    if (sdk) {
+      const unsubs = setupEventListeners(sdk.events);
+      cleanups = unsubs;
+      // If SDK already performed handshake before we subscribed, synthesize ready
+      if (sdk.handshake) {
+        const event = { type: 'ready', handshake: sdk.handshake } as InstantPayEvent;
+        setEvents(prev => [{ ...event, timestamp: Date.now() }, ...prev]);
+      }
     }
   });
 
+  onCleanup(() => {
+    for (const c of cleanups) {
+      try { c(); } catch { /* noop */ }
+    }
+    cleanups = [];
+  });
 
-  const setupEventListeners = (events: InstantPayEmitter) => {
+
+  const setupEventListeners = (events: InstantPayEmitter): Array<() => void> => {
     console.log('[EventLogs] Setting up listeners for events emitter:', events);
     // Listen to all InstantPay events
-    const eventTypes: InstantPayEvent['type'][] = ['ready', 'click', 'sent', 'cancelled', 'handoff'];
+    const eventTypes: InstantPayEvent['type'][] = ['ready', 'show', 'click', 'sent', 'cancelled', 'handoff'];
     
+    const unsubs: Array<() => void> = [];
     eventTypes.forEach((eventType) => {
       console.log('[EventLogs] Adding listener for:', eventType);
-      events.on(eventType, (event) => {
+      const off = events.on(eventType, (event) => {
         console.log('[EventLogs] Received InstantPay event:', event);
         // Add event to the beginning of the array (newest first) with timestamp
         const eventWithTimestamp = { ...event, timestamp: Date.now() };
@@ -76,7 +113,10 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
           return [eventWithTimestamp, ...prev];
         });
       });
+      unsubs.push(off);
     });
+
+    return unsubs;
   };
 
   const clearEvents = () => {

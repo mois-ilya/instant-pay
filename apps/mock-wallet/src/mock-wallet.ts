@@ -51,6 +51,8 @@ export class MockWallet implements InstantPayAPI {
 
         this._current = params;
         this._showPayButtonOverlay(params);
+        // Emit 'show' when button is rendered
+        this.events.emit({ type: 'show', invoiceId: params.request.invoiceId } as any);
     }
 
     /**
@@ -150,10 +152,11 @@ export class MockWallet implements InstantPayAPI {
     private _attachButtonEvents(params: PayButtonParams): void {
         if (!this._overlayElement) return;
 
-        // Handle button click
+        // Handle button click (use closest to support inner spans)
         this._overlayElement.addEventListener('click', (e) => {
-            const target = e.target as HTMLElement;
-            const action = target.getAttribute('data-action');
+            const raw = e.target as Element | null;
+            const el = raw && 'closest' in raw ? (raw.closest('[data-action]') as HTMLElement | null) : null;
+            const action = el?.getAttribute('data-action');
 
             if (action === 'pay') {
                 // Mark clicked

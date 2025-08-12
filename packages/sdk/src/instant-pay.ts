@@ -80,7 +80,7 @@ export class InstantPaySDK {
     this.hs = instantPayAPI.handshake({ name: this._detectAppName(), url: location.origin });
 
     // Forward wallet events to SDK emitter
-    (['ready', 'click', 'sent', 'cancelled'] as const).forEach((type) => {
+    (['ready', 'show', 'click', 'sent', 'cancelled', 'handoff'] as const).forEach((type) => {
         instantPayAPI.events.on(type, (e) => this.events.emit(e));
     });
 

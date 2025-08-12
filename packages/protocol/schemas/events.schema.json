@@ -27,6 +27,12 @@
     {
       "type": "object",
       "required": ["type","invoiceId"],
+      "properties": { "type": { "const": "show" }, "invoiceId": { "type": "string", "format": "uuid" } },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": ["type","invoiceId"],
       "properties": { "type": { "const": "click" }, "invoiceId": { "type": "string", "format": "uuid" } },
       "additionalProperties": false
     },
