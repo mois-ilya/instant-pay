@@ -6,26 +6,24 @@
  */
 
 // Core SDK exports
-export { InstantPay } from './instant-pay';
+export { InstantPaySDK } from './instant-pay';
+// Backward-compatible alias for demo until migrated
+export { InstantPaySDK as InstantPay } from './instant-pay';
 export { InstantPayEmitter } from './events';
 
 // Type exports from protocol
 export type {
-  Config as InstantPayConfig,
-  SetPayButtonParams,
-  Event as IPEvent
+  PayButtonParams,
+  PaymentRequest,
+  InstantPayEvent
 } from '@tonkeeper/instantpay-protocol';
+export type { Handshake, InstantPayAPI } from './instant-pay';
 
 // Type exports from SDK
-export type { InstantPayAPI } from './instant-pay';
-export type { InstantPayEmitterInterface } from './events';
+export type { InstantPayEventEmitter } from './events';
 
 // Error exports
-export {
-  InstantPayInvalidParamsError,
-  InstantPayLimitExceededError,
-  InstantPayConcurrentOperationError
-} from './errors';
+export { InstantPayInvalidParamsError } from './errors';
 
 // Validation exports
-export { validateSetPayButtonParams } from './validation';
+export { validatePayButtonParams } from './validation';

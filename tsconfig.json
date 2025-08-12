@@ -25,7 +25,6 @@
   "references": [
     {"path": "./packages/protocol"},
     {"path": "./packages/sdk"},
-    {"path": "./apps/mock-wallet"},
-    {"path": "./apps/demo-dapp"}
+    {"path": "./apps/mock-wallet"}
   ]
 }

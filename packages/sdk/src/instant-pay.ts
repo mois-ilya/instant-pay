@@ -1,120 +1,165 @@
 /**
- * InstantPay SDK Core Class
- *
- * Wrapper around window.tonkeeper?.instantPay that provides the InstantPay protocol API.
- * This SDK acts as a bridge between dApps and the wallet's InstantPay implementation.
+ * InstantPay SDK per InstantPay 1.0 spec (Button‑First)
+ * - Uses injected API when available
+ * - Provides deep-link fallback when not injected
  */
 
-import type {
-    Config as InstantPayConfig,
-    SetPayButtonParams,
-} from '@tonkeeper/instantpay-protocol';
 import { InstantPayEmitter } from './events';
-import { validateSetPayButtonParams } from './validation';
+import type { InstantPayEventEmitter } from './events';
+import type { PayButtonParams, PaymentRequest } from '@tonkeeper/instantpay-protocol';
+import { validatePayButtonParams } from './validation';
 import { InstantPayInvalidParamsError } from './errors';
+import { beginCell } from '@ton/core';
 
-// Declare global type for window.tonkeeper
-declare global {
-    interface Window {
-        tonkeeper?: {
-            instantPay?: InstantPayAPI;
-        };
-    }
+// Types defined by the protocol (not exported from protocol package)
+export type InstantPaySemver = `${number}.${number}.${number}`;
+
+export interface AppMeta {
+  name: string;
+  url?: string;
+  iconUrl?: string;
 }
 
-/**
- * Main InstantPay API interface
- */
+export interface Handshake {
+  protocolVersion: InstantPaySemver;
+  wallet: { name: string };
+  privacy: { exposesAccount: false };
+}
+
+export type CancelReason = 'user' | 'app' | 'wallet' | 'replaced' | 'expired' | 'unsupported_env';
+
+export type RequestPaymentResult =
+  | { status: 'sent'; boc: string }
+  | { status: 'cancelled'; reason?: CancelReason };
+
+// Use emitter interface from events.ts to keep consistent typing
+
 export interface InstantPayAPI {
-    config: InstantPayConfig;
-    setPayButton(params: SetPayButtonParams): void;
-    hidePayButton(): void;
-    events: InstantPayEmitter;
+  readonly protocolVersion: InstantPaySemver;
+  handshake(app: AppMeta, require?: { minProtocol?: InstantPaySemver }): Handshake;
+  setPayButton(params: PayButtonParams): void;
+  hidePayButton(): void;
+  requestPayment?(request: PaymentRequest, opts?: { signal?: AbortSignal }): Promise<RequestPaymentResult>;
+  getActive(): { invoiceId: string } | null;
+  events: InstantPayEventEmitter;
 }
 
-/**
- * InstantPay SDK implementation - wrapper around window.tonkeeper?.instantPay
- */
-export class InstantPay {
-    public readonly events: InstantPayEmitter;
-    private readonly _walletAPI: InstantPayAPI;
+// Global window typing
+declare global {
+  interface Window {
+    tonkeeper?: { instantPay?: InstantPayAPI };
+  }
+}
 
-    constructor() {
-        const walletAPI = window?.tonkeeper?.instantPay;
-        if (!walletAPI) {
-            throw new Error('InstantPay SDK not initialized with wallet API');
-        }
+export type FallbackCallback = (ctx: { url: string; scheme: 'ton' | 'https'; open: () => void }) => void | (() => void);
 
-        this._walletAPI = walletAPI;
-        this.events = new InstantPayEmitter();
+export class InstantPaySDK {
+  public readonly events: InstantPayEmitter;
+  private api?: InstantPayAPI;
+  private hs?: Handshake;
+  private cleanupFallback?: () => void;
 
-        // Forward events from wallet API to our emitter
-        this._setupEventForwardingInstantPay();
+  constructor() {
+    this.events = new InstantPayEmitter();
+
+    const instantPayAPI = window?.tonkeeper?.instantPay;
+    if (!instantPayAPI) { return; }
+
+    this.api = instantPayAPI;
+
+    // Synchronous handshake per spec
+    this.hs = instantPayAPI.handshake({ name: this._detectAppName(), url: location.origin });
+
+    // Forward wallet events to SDK emitter
+    (['ready', 'click', 'sent', 'cancelled'] as const).forEach((type) => {
+        instantPayAPI.events.on(type, (e) => this.events.emit(e));
+    });
+
+    // Emit consolidated ready
+    this.events.emit({ type: 'ready', handshake: this.hs });
+  }
+
+  get isInjected(): boolean { return !!this.api; }
+  get handshake(): Handshake | undefined { return this.hs; }
+
+  setPayButton(params: PayButtonParams, opts?: { onUnsupported?: FallbackCallback }): void {
+    // Validate against JSON Schemas
+    const validation = validatePayButtonParams(params);
+    if (!validation.valid) {
+      // Minimal error contract: message with code
+      throw new InstantPayInvalidParamsError(validation.error ?? 'INVALID_PARAMS');
     }
 
-    /**
-     * Setup event forwarding from wallet API to SDK emitter
-     */
-    private _setupEventForwardingInstantPay(): void {
-        console.log('[InstantPay] Setting up event forwarding from wallet API to SDK');
-        const eventTypes = ['click', 'sent', 'cancelled'] as const;
-        eventTypes.forEach((eventType) => {
-            console.log('[InstantPay] Setting up forwarding for:', eventType);
-            this._walletAPI.events.on(eventType, (event) => {
-                console.log('[InstantPay] Forwarding event from wallet API:', event);
-                this.events.emit(event);
-            });
-        });
+    // Inject path
+    if (this.api) {
+      this.api.setPayButton(params);
+      return;
     }
 
-    static isAvailable(): boolean {
-        return window?.tonkeeper?.instantPay !== undefined;
-    }
+    // Fallback path: build deep link and provide to callback
+    const { url, scheme } = this._buildDeepLink(params.request);
+    const open = () => {
+      window.location.href = url;
+      this.events.emit({ type: 'handoff', invoiceId: params.request.invoiceId, url, scheme });
+    };
 
-    /**
-     * Get current wallet configuration
-     */
-    get config(): InstantPayConfig {
-        return this._walletAPI.config;
-    }
+    if (this.cleanupFallback) { try { this.cleanupFallback(); } catch { /* noop */ } }
+    this.cleanupFallback = typeof opts?.onUnsupported === 'function'
+      ? (opts.onUnsupported({ url, scheme, open }) || undefined)
+      : undefined;
+  }
 
-    /**
-     * Render or update the Pay button
-     *
-     * @param params - Payment parameters
-     * @throws {InstantPayInvalidParamsError} Invalid parameters
-     * @throws {InstantPayLimitExceededError} Amount exceeds limits
-     * @throws {InstantPayConcurrentOperationError} Another operation is active
-     */
-    setPayButton(params: SetPayButtonParams): void {
-        // Optional: Add SDK-level validation before delegating to wallet
-        const validation = validateSetPayButtonParams(
-            params,
-            this._walletAPI.config
-        );
-        if (!validation.valid) {
-            throw new InstantPayInvalidParamsError(
-                validation.error || 'Invalid parameters'
-            );
-        }
+  hidePayButton(): void {
+    this.cleanupFallback?.();
+    this.cleanupFallback = undefined;
+    this.api?.hidePayButton();
+  }
 
-        // Delegate to wallet API
-        this._walletAPI.setPayButton(params);
-    }
+  async requestPayment(request: PaymentRequest, opts?: { signal?: AbortSignal }): Promise<RequestPaymentResult> {
+    if (!this.api?.requestPayment) throw new Error('NOT_SUPPORTED');
+    return this.api.requestPayment(request, opts);
+  }
 
-    /**
-     * Remove the button and cancel active operation
-     * Idempotent - extra calls are ignored
-     */
-    hidePayButton(): void {
-        // Delegate to wallet API
-        this._walletAPI.hidePayButton();
-    }
+  private _buildDeepLink(request: PaymentRequest): { url: string; scheme: 'ton' | 'https' } {
+    const isMobile = this._isMobile();
+    const scheme: 'ton' | 'https' = isMobile ? 'ton' : 'https';
+    const base = scheme === 'ton' ? 'ton://' : 'https://app.tonkeeper.com/';
 
-    /**
-     * Check if wallet API is available
-     */
-    get isAvailable(): boolean {
-        return this._walletAPI !== null;
-    }
+    const params = new URLSearchParams();
+
+    const noneAdnl = request.adnlAddress
+        ? beginCell()
+            .storeUint(1, 8)
+            .storeBuffer(Buffer.from(request.adnlAddress, "hex"))
+        : beginCell().storeUint(0, 8);
+    
+    const uuidBuffer = Buffer.from(request.invoiceId.split('-').join(''), 'hex');
+    
+    const invoicePayload = beginCell()
+        .storeUint(0x7aa23eb5, 32) // INVOICE_OP_CODE (operation identifier)
+        .storeBuffer(uuidBuffer)
+        .storeBuilder(noneAdnl)
+        .endCell();
+
+    const bin = invoicePayload.toBoc().toString("base64");
+
+    if (request.asset.type === 'jetton') params.set('jetton', request.asset.master);
+    params.set('amount', request.amount);
+    params.set('bin', bin);
+    if (request.expiresAt) params.set('exp', String(request.expiresAt));
+
+    const url = `${base}transfer/${request.recipient}?${params.toString()}`;
+    return { url, scheme };
+  }
+
+  private _isMobile(): boolean {
+    if (typeof navigator === 'undefined') return false;
+    const ua = navigator.userAgent || navigator.vendor || '';
+    return /android|iphone|ipad|ipod/i.test(ua);
+  }
+
+  private _detectAppName(): string {
+    if (typeof document !== 'undefined' && document.title) return document.title;
+    try { return new URL(location.href).host; } catch { return 'InstantPay dApp'; }
+  }
 }

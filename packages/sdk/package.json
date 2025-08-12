@@ -11,7 +11,10 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@tonkeeper/instantpay-protocol": "workspace:*"
+    "@ton/core": "^0.61.0",
+    "@tonkeeper/instantpay-protocol": "workspace:*",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1"
   },
   "devDependencies": {
     "typescript": "^5.9.2",
