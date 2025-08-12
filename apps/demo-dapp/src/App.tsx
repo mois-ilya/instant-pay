@@ -1,5 +1,5 @@
 import { Component, createMemo, createSignal, onMount } from 'solid-js';
-import { InstantPay as InstantPay, InstantPayAPI } from '@tonkeeper/instantpay-sdk';
+import { InstantPay as InstantPay, InstantPayAPI, InstantPayInitOptions } from '@tonkeeper/instantpay-sdk';
 import { initMockWallet, isMockWalletActive } from 'mock-wallet';
 import { WalletStatus } from './components/WalletStatus';
 import { EventLogs } from './components/EventLogs';
@@ -29,7 +29,24 @@ export const App: Component = () => {
             initMockWallet();
         }
 
-        const _instantPay = new InstantPay();
+        const instantPayInitOptions: InstantPayInitOptions = {onFallbackShow: ({ openDeeplink, payButtonParams }) => {
+            const btn = document.getElementById('fallback') as HTMLButtonElement | null;
+            if (!btn) return;
+            const { label, request } = payButtonParams;
+            const currency = request.asset.type === 'jetton' ? 'TOKEN' : 'TON';
+            const cap = label.charAt(0).toUpperCase() + label.slice(1);
+            btn.textContent = `${cap} ${request.amount} ${currency}`;
+            btn.onclick = openDeeplink;
+            btn.classList.remove('hidden');
+        },
+        onFallbackHide: () => {
+            const btn = document.getElementById('fallback') as HTMLButtonElement | null;
+            if (!btn) return;
+            btn.onclick = null;
+            btn.classList.add('hidden');
+        }};
+
+        const _instantPay = new InstantPay(instantPayInitOptions);
         setInstantPay(_instantPay);
 
         // Determine wallet type based on actual injection state
@@ -57,6 +74,16 @@ export const App: Component = () => {
                         Demonstration of all InstantPay protocol features
                     </p>
                 </header>
+
+                {/* Fallback button (appears when no wallet is injected) */}
+                <div class="mb-5">
+                    <button
+                        id="fallback"
+                        class="hidden w-full bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-lg font-semibold text-sm transition-colors"
+                    >
+                        Open in Tonkeeper
+                    </button>
+                </div>
 
                 {/* Scenarios and Logs: scenarios first, then logs on mobile; side-by-side on desktop */}
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5 lg:min-h-[60vh]">

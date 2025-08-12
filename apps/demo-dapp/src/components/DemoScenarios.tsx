@@ -156,16 +156,7 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
         };
         props.instantPay.setPayButton(replacement);
       } else {
-        props.instantPay.setPayButton(params, {
-          onUnsupported: ({ open }) => {
-            const btn = document.getElementById('fallback');
-            if (btn) {
-              btn.textContent = 'Open in Tonkeeper';
-              (btn as HTMLButtonElement).onclick = open;
-              return () => { (btn as HTMLButtonElement).onclick = null; };
-            }
-          }
-        });
+        props.instantPay.setPayButton(params);
       }
       
     } catch (err) {

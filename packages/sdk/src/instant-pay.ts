@@ -69,16 +69,30 @@ declare global {
   }
 }
 
-export type FallbackCallback = (ctx: { url: string; scheme: 'ton' | 'https'; open: () => void }) => void | (() => void);
+export interface FallbackContext {
+  payButtonParams: PayButtonParams;
+  deeplinkUrl: string;
+  deeplinkScheme: 'ton' | 'https';
+  openDeeplink: () => void;
+  invoiceBocBase64: string;
+}
+
+export interface InstantPayInitOptions {
+  onFallbackShow?: (ctx: FallbackContext) => void;
+  onFallbackHide?: () => void;
+}
 
 export class InstantPaySDK {
   public readonly events: InstantPayEmitter;
   private api?: InstantPayAPI;
   private hs?: Handshake;
-  private cleanupFallback?: () => void;
+  private onFallbackShow?: (ctx: FallbackContext) => void;
+  private onFallbackHide?: () => void;
 
-  constructor() {
+  constructor(opts?: InstantPayInitOptions) {
     this.events = new InstantPayEmitter();
+    this.onFallbackShow = opts?.onFallbackShow;
+    this.onFallbackHide = opts?.onFallbackHide;
 
     const instantPayAPI = window?.tonkeeper?.instantPay;
     if (!instantPayAPI) { return; }
@@ -102,7 +116,7 @@ export class InstantPaySDK {
 
   // Capabilities are provided in handshake
 
-  setPayButton(params: PayButtonParams, opts?: { onUnsupported?: FallbackCallback }): void {
+  setPayButton(params: PayButtonParams): void {
     // Inject path: delegate validation to wallet implementation
     if (this.api) {
       this.api.setPayButton(params);
@@ -115,21 +129,32 @@ export class InstantPaySDK {
     if (!validation.valid) {
       throw new InstantPayInvalidParamsError(validation.error ?? 'INVALID_PARAMS');
     }
-    const { url, scheme } = this._buildDeepLink(params.request);
-    const open = () => {
+    const { url, scheme, bin } = this._buildDeepLink(params.request);
+    const openDeeplink = () => {
+      // mirror wallet semantics: emit click before handoff
+      this.events.emit({ type: 'click', invoiceId: params.request.invoiceId });
       window.location.href = url;
       this.events.emit({ type: 'handoff', invoiceId: params.request.invoiceId, url, scheme });
     };
 
-    if (this.cleanupFallback) { try { this.cleanupFallback(); } catch { /* noop */ } }
-    this.cleanupFallback = typeof opts?.onUnsupported === 'function'
-      ? (opts.onUnsupported({ url, scheme, open }) || undefined)
-      : undefined;
+    // hide previous custom UI (if any) before showing a new one
+    try { this.onFallbackHide?.(); } catch { /* noop */ }
+
+    // emit 'show' when fallback UI becomes available
+    this.events.emit({ type: 'show', invoiceId: params.request.invoiceId });
+
+    this.onFallbackShow?.({
+      payButtonParams: params,
+      deeplinkUrl: url,
+      deeplinkScheme: scheme,
+      openDeeplink,
+      invoiceBocBase64: bin
+    });
   }
 
   hidePayButton(): void {
-    this.cleanupFallback?.();
-    this.cleanupFallback = undefined;
+    // Hide custom UI first
+    try { this.onFallbackHide?.(); } catch { /* noop */ }
     this.api?.hidePayButton();
   }
 
@@ -138,7 +163,7 @@ export class InstantPaySDK {
     return this.api.requestPayment(request, opts);
   }
 
-  private _buildDeepLink(request: PaymentRequest): { url: string; scheme: 'ton' | 'https' } {
+  private _buildDeepLink(request: PaymentRequest): { url: string; scheme: 'ton' | 'https'; bin: string } {
     const isMobile = this._isMobile();
     const scheme: 'ton' | 'https' = isMobile ? 'ton' : 'https';
     const base = scheme === 'ton' ? 'ton://' : 'https://app.tonkeeper.com/';
@@ -167,7 +192,7 @@ export class InstantPaySDK {
     if (request.expiresAt) params.set('exp', String(request.expiresAt));
 
     const url = `${base}transfer/${request.recipient}?${params.toString()}`;
-    return { url, scheme };
+    return { url, scheme, bin };
   }
 
   private _isMobile(): boolean {

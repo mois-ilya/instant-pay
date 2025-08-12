@@ -17,7 +17,7 @@ export type {
   PaymentRequest,
   InstantPayEvent
 } from '@tonkeeper/instantpay-protocol';
-export type { Handshake, InstantPayAPI } from './instant-pay';
+export type { Handshake, InstantPayAPI, InstantPayInitOptions, FallbackContext } from './instant-pay';
 
 // Type exports from SDK
 export type { InstantPayEventEmitter } from './events';
