@@ -59,15 +59,17 @@ export const App: Component = () => {
                 </header>
 
                 {/* Scenarios and Logs: scenarios first, then logs on mobile; side-by-side on desktop */}
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5 lg:min-h-[60vh]">
                     {/* Demo Scenarios */}
                     <DemoScenarios instantPay={instantPay()} walletType={walletType()} />
 
                     {/* Event Logs */}
-                    <EventLogs instantPay={instantPay()} />
+                    <div class="min-h-[360px] lg:h-auto">
+                        <EventLogs instantPay={instantPay()} />
+                    </div>
 
                     {/* Instructions */}
-                    <div class="bg-white rounded-xl p-5 shadow-sm">
+                    <div class="bg-white rounded-xl p-5 shadow-sm lg:col-span-2">
                         <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                             <h4 class="text-base font-semibold text-blue-900 mb-3">How to Use</h4>
                             <ol class="text-sm text-blue-800 space-y-1 list-decimal ml-4">

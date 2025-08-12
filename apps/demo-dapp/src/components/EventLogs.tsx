@@ -124,7 +124,7 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
   };
 
   return (
-    <div class="bg-white rounded-xl p-5 shadow-sm h-fit">
+    <div class="bg-white rounded-xl p-5 shadow-sm h-full flex flex-col">
       {/* Header */}
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-xl font-semibold text-slate-800">Event Logs ({events.length})</h3>
@@ -137,7 +137,7 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
       </div>
 
       {/* Events List */}
-      <div class="max-h-96 overflow-y-auto border border-slate-200 rounded-lg">
+      <div class="flex-1 overflow-y-auto border border-slate-200 rounded-lg">
         <Show 
           when={events().length > 0}
           fallback={
