@@ -33,6 +33,15 @@ export interface AppMeta {
 export interface Handshake {
   protocolVersion: InstantPaySemver;
   wallet: { name: string };
+  capabilities: WalletCapabilities;
+}
+
+// Optional wallet capability description (non-normative, demo/useful extension)
+export interface WalletCapabilities {
+  instant: Array<{
+    asset: { type: 'ton' } | { type: 'jetton'; master: string };
+    limit: string;
+  }>;
 }
 
 export type CancelReason = 'user' | 'app' | 'wallet' | 'replaced' | 'expired' | 'unsupported_env';
@@ -90,6 +99,8 @@ export class InstantPaySDK {
 
   get isInjected(): boolean { return !!this.api; }
   get handshake(): Handshake | undefined { return this.hs; }
+
+  // Capabilities are provided in handshake
 
   setPayButton(params: PayButtonParams, opts?: { onUnsupported?: FallbackCallback }): void {
     // Validate against JSON Schemas

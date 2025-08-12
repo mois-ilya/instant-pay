@@ -1,4 +1,4 @@
-import { Component, Show, createSignal } from 'solid-js';
+import { Component, Show, createSignal, createMemo, For } from 'solid-js';
 import type { Handshake } from '@tonkeeper/instantpay-sdk';
 import { WalletType } from '../App';
 
@@ -9,6 +9,15 @@ interface WalletStatusProps {
 
 export const WalletStatus: Component<WalletStatusProps> = (props) => {
   const [detailsOpen, setDetailsOpen] = createSignal(false);
+
+  type Capability = {
+    asset: { type: 'ton' } | { type: 'jetton'; master: string };
+    limit: string;
+  };
+
+  const capabilities = createMemo<{ instant: Capability[] } | null>(() => {
+    return (props.handshake?.capabilities as { instant: Capability[] } | undefined) ?? null;
+  });
 
   const statusStyle = () => {
     switch (props.walletType) {
@@ -43,6 +52,11 @@ export const WalletStatus: Component<WalletStatusProps> = (props) => {
           </div>
 
           <div class="flex items-center gap-2">
+            <Show when={props.walletType === 'none'}>
+              <span class="text-xs bg-white/15 px-2 py-1 rounded">
+                Fallback (deep link) will be used
+              </span>
+            </Show>
             <button
               class="text-xs px-3 py-1.5 rounded-md bg-white/15 hover:bg-white/25 transition-colors"
               onClick={() => setDetailsOpen(true)}
@@ -81,8 +95,23 @@ export const WalletStatus: Component<WalletStatusProps> = (props) => {
               <Show when={!props.handshake}>
                 <div>No handshake available yet.</div>
               </Show>
-              {/* Placeholder for available jettons or other info */}
-              <div class="pt-2 text-slate-500">Available assets will appear here.</div>
+              <div class="pt-2">
+                <h4 class="font-semibold mb-2">Instant assets</h4>
+                <Show when={capabilities()?.instant?.length} fallback={<div class="text-slate-500">Not provided by wallet</div>}>
+                  <ul class="space-y-1">
+                    <For each={capabilities()!.instant}>
+                      {(c: Capability) => (
+                        <li class="flex items-center justify-between text-slate-700">
+                          <span>
+                            {c.asset.type === 'ton' ? 'TON' : `JETTON ${c.asset.master.slice(0, 8)}…${c.asset.master.slice(-8)}`}
+                          </span>
+                          <span class="text-slate-500 text-xs">≤ {c.limit} per tx</span>
+                        </li>
+                      )}
+                    </For>
+                  </ul>
+                </Show>
+              </div>
             </div>
             <div class="px-4 py-3 border-t flex justify-end">
               <button class="px-4 py-1.5 rounded-md bg-slate-800 text-white text-sm" onClick={() => setDetailsOpen(false)}>Close</button>

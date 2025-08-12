@@ -223,96 +223,73 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
 
   return (
     <div class="bg-white rounded-xl p-5 shadow-sm">
+      
       <h3 class="text-xl font-semibold text-slate-800 mb-5">Demo Scenarios</h3>
 
-      <Show 
-        when={props.walletType !== 'none'}
-        fallback={
-          <div class="p-5 text-center text-red-600 bg-red-50 rounded-lg border border-red-200">
-            No wallet available. Install Tonkeeper or enable mock wallet to test scenarios.
-          </div>
-        }
-      >
-        {/* Control Buttons */}
-        <div class="flex flex-wrap gap-3 mb-5">
-          <button
-            onClick={hidePayButton}
-            class="bg-slate-500 hover:bg-slate-600 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
-          >
-            Hide Pay Button
-          </button>
-          <button id="fallback" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors">
-            Fallback (deep link)
-          </button>
-          
-          <button
-            onClick={cycleThroughLabels}
-            disabled={!props.instantPay}
-            class="bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
-          >
-            Cycle Through Labels
-          </button>
-        </div>
+      {/* Control Buttons */}
+      <div class="flex flex-wrap gap-3 mb-5">
+        <button
+          onClick={hidePayButton}
+          class="bg-slate-500 hover:bg-slate-600 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
+        >
+          Hide Pay Button
+        </button>
+        
+        <button
+          onClick={cycleThroughLabels}
+          disabled={!props.instantPay}
+          class="bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
+        >
+          Cycle Through Labels
+        </button>
+      </div>
 
-        {/* Error Display */}
-        <Show when={error()}>
-          <div class="p-3 mb-5 bg-red-50 border border-red-200 rounded-lg text-red-800">
-            <strong>Error:</strong> {error()}
-          </div>
-        </Show>
-
-        {/* Active Scenario Display */}
-        <Show when={activeScenario()}>
-          <div class="p-3 mb-5 bg-blue-50 border border-blue-200 rounded-lg text-blue-800">
-            <strong>Active Scenario:</strong> {activeScenario()}
-          </div>
-        </Show>
-
-        {/* Scenarios Grid */}
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-5">
-          <For each={scenarios}>
-            {(scenario) => (
-              <div class={`border border-slate-200 rounded-lg p-4 transition-colors ${activeScenario() === scenario.id ? 'bg-slate-50' : 'bg-white'}`}>
-                <h4 class="text-base font-semibold text-slate-700 mb-2">{scenario.title}</h4>
-                
-                <p class="text-sm text-slate-600 mb-3 leading-relaxed">{scenario.description}</p>
-
-                <div class="bg-slate-50 rounded p-2 mb-3 text-xs font-mono space-y-1">
-                  <div><strong>Amount:</strong> {scenario.params.request.amount}</div>
-                  <div><strong>Label:</strong> {scenario.params.label}</div>
-                  <Show when={scenario.params.request.asset.type === 'jetton'}>
-                    <div><strong>Jetton:</strong> {(scenario.params.request.asset.type === 'jetton' ? scenario.params.request.asset.master.slice(0, 20) : '')}...</div>
-                  </Show>
-                </div>
-
-                <div class="text-xs text-green-600 mb-3 italic">
-                  Expected: {scenario.expectedOutcome}
-                </div>
-
-                <button
-                  onClick={() => runScenario(scenario)}
-                  disabled={!props.instantPay}
-                  class="w-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-3 py-2 rounded font-semibold text-sm transition-colors"
-                >
-                  Run Scenario
-                </button>
-              </div>
-            )}
-          </For>
-        </div>
-
-        {/* Instructions */}
-        <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h4 class="text-base font-semibold text-blue-900 mb-3">How to Use</h4>
-          <ol class="text-sm text-blue-800 space-y-1 list-decimal ml-4">
-            <li>Click "Run Scenario" to test different InstantPay features</li>
-            <li>Watch the Event Logs panel for real-time feedback</li>
-            <li>Try interacting with the Pay button when it appears</li>
-            <li>Use "Hide Pay Button" to clear the current transaction</li>
-            <li>Use "Cycle Through Labels" to see all available button labels</li>
-          </ol>
+      {/* Error Display */}
+      <Show when={error()}>
+        <div class="p-3 mb-5 bg-red-50 border border-red-200 rounded-lg text-red-800">
+          <strong>Error:</strong> {error()}
         </div>
       </Show>
+
+      {/* Active Scenario Display */}
+      <Show when={activeScenario()}>
+        <div class="p-3 mb-5 bg-blue-50 border border-blue-200 rounded-lg text-blue-800">
+          <strong>Active Scenario:</strong> {activeScenario()}
+        </div>
+      </Show>
+
+      {/* Scenarios Grid */}
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-5">
+        <For each={scenarios}>
+          {(scenario) => (
+            <div class={`border border-slate-200 rounded-lg p-4 transition-colors ${activeScenario() === scenario.id ? 'bg-slate-50' : 'bg-white'}`}>
+              <h4 class="text-base font-semibold text-slate-700 mb-2">{scenario.title}</h4>
+              
+              <p class="text-sm text-slate-600 mb-3 leading-relaxed">{scenario.description}</p>
+
+              <div class="bg-slate-50 rounded p-2 mb-3 text-xs font-mono space-y-1">
+                <div><strong>Amount:</strong> {scenario.params.request.amount}</div>
+                <div><strong>Label:</strong> {scenario.params.label}</div>
+                <Show when={scenario.params.request.asset.type === 'jetton'}>
+                  <div><strong>Jetton:</strong> {(scenario.params.request.asset.type === 'jetton' ? scenario.params.request.asset.master.slice(0, 20) : '')}...</div>
+                </Show>
+              </div>
+
+              <div class="text-xs text-green-600 mb-3 italic">
+                Expected: {scenario.expectedOutcome}
+              </div>
+
+              <button
+                onClick={() => runScenario(scenario)}
+                disabled={!props.instantPay}
+                class="w-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-3 py-2 rounded font-semibold text-sm transition-colors"
+              >
+                Run Scenario
+              </button>
+            </div>
+          )}
+        </For>
+      </div>
     </div>
   );
 };

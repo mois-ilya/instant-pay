@@ -7,6 +7,7 @@ import type { InstantPayAPI, Handshake } from '@tonkeeper/instantpay-sdk';
 import type { PayButtonParams, PaymentRequest } from '@tonkeeper/instantpay-protocol';
 import { validatePayButtonParams } from '@tonkeeper/instantpay-sdk';
 import { InstantPayInvalidParamsError } from '@tonkeeper/instantpay-sdk';
+import type { InstantPayEvent } from '@tonkeeper/instantpay-protocol';
 
 // v1 mock has no extended runtime config
 
@@ -29,6 +30,14 @@ export class MockWallet implements InstantPayAPI {
         this._injectStyles();
     }
 
+    /** Demo capabilities for instant payments (mock only) */
+    private _capabilities = {
+        instant: [
+            { asset: { type: 'ton' } as const, limit: '10' },
+            { asset: { type: 'jetton' as const, master: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs' }, limit: '1000' }
+        ]
+    };
+
     handshake(_app: { name: string; url?: string; iconUrl?: string }, require?: { minProtocol?: `${number}.${number}.${number}` }): Handshake {
         if (require?.minProtocol && this._compareSemver(this.protocolVersion, require.minProtocol) < 0) {
             throw new Error('INCOMPATIBLE_VERSION');
@@ -36,6 +45,7 @@ export class MockWallet implements InstantPayAPI {
         return {
             protocolVersion: this.protocolVersion,
             wallet: { name: 'MockWallet' },
+            capabilities: this._capabilities,
         };
     }
 
@@ -52,7 +62,8 @@ export class MockWallet implements InstantPayAPI {
         this._current = params;
         this._showPayButtonOverlay(params);
         // Emit 'show' when button is rendered
-        this.events.emit({ type: 'show', invoiceId: params.request.invoiceId } as any);
+        const ev: InstantPayEvent = { type: 'show', invoiceId: params.request.invoiceId } as InstantPayEvent;
+        this.events.emit(ev);
     }
 
     /**

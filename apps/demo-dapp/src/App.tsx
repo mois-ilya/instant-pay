@@ -1,6 +1,6 @@
 import { Component, createMemo, createSignal, onMount } from 'solid-js';
 import { InstantPay as InstantPay, InstantPayAPI } from '@tonkeeper/instantpay-sdk';
-import { initMockWallet } from 'mock-wallet';
+import { initMockWallet, isMockWalletActive } from 'mock-wallet';
 import { WalletStatus } from './components/WalletStatus';
 import { EventLogs } from './components/EventLogs';
 import { DemoScenarios } from './components/DemoScenarios';
@@ -28,10 +28,16 @@ export const App: Component = () => {
         if (isMockWalletEnabled()) {
             initMockWallet();
         }
-        setWalletType(isMockWalletEnabled() ? 'mock' : 'real');
 
         const _instantPay = new InstantPay();
         setInstantPay(_instantPay);
+
+        // Determine wallet type based on actual injection state
+        if (_instantPay.isInjected) {
+            setWalletType(isMockWalletActive() ? 'mock' : 'real');
+        } else {
+            setWalletType('none');
+        }
     });
 
     return (
@@ -59,6 +65,20 @@ export const App: Component = () => {
 
                     {/* Event Logs */}
                     <EventLogs instantPay={instantPay()} />
+
+                    {/* Instructions */}
+                    <div class="bg-white rounded-xl p-5 shadow-sm">
+                        <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <h4 class="text-base font-semibold text-blue-900 mb-3">How to Use</h4>
+                            <ol class="text-sm text-blue-800 space-y-1 list-decimal ml-4">
+                                <li>Click "Run Scenario" to test different InstantPay features</li>
+                                <li>Watch the Event Logs panel for real-time feedback</li>
+                                <li>Try interacting with the Pay button when it appears</li>
+                                <li>Use "Hide Pay Button" to clear the current transaction</li>
+                                <li>Use "Cycle Through Labels" to see all available button labels</li>
+                            </ol>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
