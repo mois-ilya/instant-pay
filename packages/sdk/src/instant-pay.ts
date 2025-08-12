@@ -103,20 +103,18 @@ export class InstantPaySDK {
   // Capabilities are provided in handshake
 
   setPayButton(params: PayButtonParams, opts?: { onUnsupported?: FallbackCallback }): void {
-    // Validate against JSON Schemas
-    const validation = validatePayButtonParams(params);
-    if (!validation.valid) {
-      // Minimal error contract: message with code
-      throw new InstantPayInvalidParamsError(validation.error ?? 'INVALID_PARAMS');
-    }
-
-    // Inject path
+    // Inject path: delegate validation to wallet implementation
     if (this.api) {
       this.api.setPayButton(params);
       return;
     }
 
     // Fallback path: build deep link and provide to callback
+    // Validate on fallback since no wallet is present to validate
+    const validation = validatePayButtonParams(params);
+    if (!validation.valid) {
+      throw new InstantPayInvalidParamsError(validation.error ?? 'INVALID_PARAMS');
+    }
     const { url, scheme } = this._buildDeepLink(params.request);
     const open = () => {
       window.location.href = url;

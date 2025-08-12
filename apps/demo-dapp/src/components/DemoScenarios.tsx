@@ -258,34 +258,48 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
         </div>
       </Show>
 
-      {/* Scenarios Grid */}
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-5">
+      {/* Scenarios List (compact vertical cards) */}
+      <div class="flex flex-col gap-3 mb-5">
         <For each={scenarios}>
           {(scenario) => (
-            <div class={`border border-slate-200 rounded-lg p-4 transition-colors ${activeScenario() === scenario.id ? 'bg-slate-50' : 'bg-white'}`}>
-              <h4 class="text-base font-semibold text-slate-700 mb-2">{scenario.title}</h4>
-              
-              <p class="text-sm text-slate-600 mb-3 leading-relaxed">{scenario.description}</p>
-
-              <div class="bg-slate-50 rounded p-2 mb-3 text-xs font-mono space-y-1">
-                <div><strong>Amount:</strong> {scenario.params.request.amount}</div>
-                <div><strong>Label:</strong> {scenario.params.label}</div>
-                <Show when={scenario.params.request.asset.type === 'jetton'}>
-                  <div><strong>Jetton:</strong> {(scenario.params.request.asset.type === 'jetton' ? scenario.params.request.asset.master.slice(0, 20) : '')}...</div>
-                </Show>
+            <div class={`border border-slate-200 rounded-lg px-4 py-3 transition-colors ${activeScenario() === scenario.id ? 'bg-slate-50' : 'bg-white'}`}>
+              {/* Top row: title, expected outcome, run button */}
+              <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0">
+                  <div class="text-sm font-semibold text-slate-800 truncate">{scenario.title}</div>
+                  <div class="text-xs text-slate-500 truncate">{scenario.description}</div>
+                </div>
+                <div class="hidden md:block text-[11px] text-green-600 italic whitespace-nowrap mr-2">
+                  {scenario.expectedOutcome}
+                </div>
+                <button
+                  onClick={() => runScenario(scenario)}
+                  disabled={!props.instantPay}
+                  class="shrink-0 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-3 py-1.5 rounded font-semibold text-xs transition-colors"
+                >
+                  Run
+                </button>
               </div>
 
-              <div class="text-xs text-green-600 mb-3 italic">
-                Expected: {scenario.expectedOutcome}
+              {/* Parameters line: compact monospace summary */}
+              <div class="mt-2 grid grid-cols-1 lg:grid-cols-3 gap-2">
+                <div class="bg-slate-50 rounded px-2 py-1 text-[11px] font-mono text-slate-700">
+                  amt={scenario.params.request.amount} label={scenario.params.label}
+                </div>
+                <div class="bg-slate-50 rounded px-2 py-1 text-[11px] font-mono text-slate-700">
+                  asset={scenario.params.request.asset.type === 'ton' ? 'TON' : `JETTON:${scenario.params.request.asset.master.slice(0,8)}…${scenario.params.request.asset.master.slice(-8)}`}
+                </div>
+                {scenario.params.request.expiresAt && (
+                  <div class="bg-slate-50 rounded px-2 py-1 text-[11px] font-mono text-slate-700">
+                    exp={scenario.params.request.expiresAt ? new Date(scenario.params.request.expiresAt*1000).toLocaleTimeString() : '—'}
+                  </div>
+                )}
               </div>
 
-              <button
-                onClick={() => runScenario(scenario)}
-                disabled={!props.instantPay}
-                class="w-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-3 py-2 rounded font-semibold text-sm transition-colors"
-              >
-                Run Scenario
-              </button>
+              {/* Expected outcome (mobile-visible) */}
+              <div class="md:hidden mt-2 text-[11px] text-green-600 italic">
+                {scenario.expectedOutcome}
+              </div>
             </div>
           )}
         </For>

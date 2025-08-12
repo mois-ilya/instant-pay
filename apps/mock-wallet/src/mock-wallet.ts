@@ -51,7 +51,17 @@ export class MockWallet implements InstantPayAPI {
 
     setPayButton(params: PayButtonParams): void {
         const v = validatePayButtonParams(params);
-        if (!v.valid) throw new InstantPayInvalidParamsError(v.error);
+        if (!v.valid) {
+            // Hide current button if visible and emit cancelled for the active invoice
+            const activeId = this._current?.request.invoiceId;
+            this._hideOverlay();
+            this._current = null;
+            this._clicked = false;
+            if (activeId) {
+                this.events.emit({ type: 'cancelled', invoiceId: activeId, reason: 'wallet' });
+            }
+            throw new InstantPayInvalidParamsError(v.error);
+        }
         if (this._clicked) throw new Error('ACTIVE_OPERATION');
 
         // Replacement semantics before click
