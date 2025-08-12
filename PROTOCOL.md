@@ -232,7 +232,8 @@ export interface InstantPayEventEmitter {
 
 ### 6.4. Попытки обновления **после клика**
 
-* Любой вызов `setPayButton()` или `cancel()` **после события `click` и до `sent|cancelled`** должен бросать `ACTIVE_OPERATION`.
+* Любой вызов `setPayButton()` **после события `click` и до `sent|cancelled`** должен бросать `ACTIVE_OPERATION`.
+* Вызов `hidePayButton()` в этот период допустим и должен отменять операцию с `cancelled('app')`.
 * Единственный, кто меняет состояние в этот момент — пользователь (через UI кошелька).
 
 ### 6.5. `hidePayButton()`
@@ -258,25 +259,23 @@ export interface InstantPayEventEmitter {
 
 ### 7.1. Формирование диплинка
 
-Из `PaymentRequest`:
+Из `PaymentRequest` формируется единый формат параметров:
 
 * **TON:**
-  `.../transfer/{recipient}?amount={amountTon}&exp={expiresAt}&bin={payloadBase64?}`
+  `.../transfer/{recipient}?amount={nanoAmount}&bin={payloadBase64}`
 
 * **Jetton:**
-  `.../transfer/{recipient}?jetton={master}&amount={amountToken}&exp={expiresAt}&bin={payloadBase64?}`
+  `.../transfer/{recipient}?jetton={master}&amount={nanoAmount}&bin={payloadBase64}`
 
-`amountTon` — десятичная сумма в TON (как в `request.amount`).
-`amountToken` — десятичная сумма токена (кошелёк округлит до min units).
-`exp` добавляется, если есть `expiresAt`.
+`nanoAmount` — сумма в наименьших единицах актива (для TON — наноTON). SDK конвертирует из `request.amount` (десятичная строка) в нано‑единицы. Параметр `exp` в текущей реализации SDK не добавляется.
 
-**Payload (`bin`, опционально):** base64‑кодированный бинарный cell следующего формата:
+**Payload (`bin`):** base64‑кодированный бинарный cell следующего формата:
 
 ```
 cell ip_invoice_payload
   op:uint32            = 0x7aa23eb5    ; INVOICE_OP_CODE
   invoice_id:uint128                   ; UUID v4 (без дефисов)
-  has_adnl:uint1
+  has_adnl:uint8                       ; 0 или 1
   adnl:bits256?                        ; при has_adnl=1 (hex64)
 = IPInvoicePayload;
 ```
@@ -296,8 +295,39 @@ type FallbackCallback = (ctx: {
 }) => void | (() => void);
 ```
 
-* SDK вызывает колбэк, если inject недоступен.
-* Когда ваш UI вызывает `ctx.open()`, SDK **эмитит** `handoff { invoiceId, url, scheme }`. Это сигнал dApp «начать трекинг блокчейна».
+В SDK обновлена модель обратного вызова для фолбэка:
+
+```ts
+export interface FallbackContext {
+  payButtonParams: PayButtonParams;
+  deeplinkUrl: string;                 // готовый диплинк
+  deeplinkScheme: 'ton' | 'https';     // выбранная схема
+  openDeeplink: (opts?: { noNavigate?: boolean }) => void; // вызов открытия (на ваш клик)
+  invoiceBocBase64: string;            // сериализованный payload ячейки (bin)
+}
+
+export interface InstantPayInitOptions {
+  onFallbackShow?: (ctx: FallbackContext) => void | undefined;
+  onFallbackHide?: () => void | undefined;
+}
+
+const sdk = new InstantPaySDK({
+  onFallbackShow: ({ deeplinkUrl, openDeeplink }) => {
+    const btn = document.getElementById('fallback');
+    if (btn) {
+      btn.textContent = 'Open in Tonkeeper';
+      btn.onclick = () => openDeeplink();
+    }
+  },
+  onFallbackHide: () => {
+    const btn = document.getElementById('fallback');
+    if (btn) btn.onclick = null;
+  }
+});
+```
+
+* SDK вызывает `onFallbackShow`, если inject недоступен, и `onFallbackHide` — при скрытии.
+* Когда ваш UI вызывает `openDeeplink()`, SDK **эмитит** `handoff { invoiceId, url, scheme }`. На текущий момент URL, передаваемый в `handoff`, принудительно переводится в схему `https` для совместимости, даже если исходная схема была `ton`.
 * Отдельного `cancelled` при фолбэке нет; если пользователь не завершил оплату, dApp может завершить ожидание по таймауту на своей стороне.
 
 ---
@@ -324,7 +354,7 @@ type FallbackCallback = (ctx: {
 
 ## 9. SDK для dApp (обёртка над inject + фолбэк)
 
-### 9.1. Публичный класс
+### 9.1. Публичный класс (обновлённая обёртка SDK)
 
 ```ts
 export class InstantPaySDK {
@@ -332,59 +362,44 @@ export class InstantPaySDK {
   private api?: InstantPayAPI;
   private hs?: Handshake;
 
-  constructor() {
-    this.api = window?.tonkeeper?.instantPay;
-    if (this.api) {
-      this.hs = this.api.handshake({ name: this._detectAppName(), url: location.origin });
-      // форвардинг событий
-      (['ready', 'show', 'click', 'sent', 'cancelled', 'handoff'] as const).forEach(t => {
-        this.api!.events.on(t, (e: any) => this.events.emit(e));
-      });
-      // сводный ready
-      this.events.emit({ type: 'ready', handshake: this.hs });
-    }
+  constructor(opts?: InstantPayInitOptions) {
+    // Инициализация, handshake и форвардинг событий из инжектированного кошелька
+    // При отсутствии inject — включается режим фолбэка и используются opts.onFallbackShow/Hide
   }
 
-  get isInjected() { return !!this.api; }
-  get handshake()  { return this.hs; }
+  get isInjected(): boolean { /* ... */ }
+  get handshake(): Handshake | undefined { /* ... */ }
 
-  setPayButton(params: PayButtonParams, opts?: { onUnsupported?: FallbackCallback }) {
-    // inject‑путь — делегируем кошельку (он валидирует и управляет UI)
-    if (this.api) { this.api.setPayButton(params); return; }
-
-    // фолбэк — минимальная валидация и построение диплинка
-    this._validate(params);
-    const url = this._buildDeepLink(params.request);
-    const scheme = this._isMobile() ? 'ton' : 'https';
-    const open = () => {
-      window.location.href = url;
-      // Сигнал dApp начать трекать блокчейн
-      this.events.emit({ type: 'handoff', invoiceId: params.request.invoiceId, url, scheme });
-    };
-
-    if (opts?.onUnsupported) opts.onUnsupported({ url, scheme, open });
+  setPayButton(params: PayButtonParams): void {
+    // inject: делегирование кошельку
+    // fallback: валидация, эмит 'show', построение диплинка и вызов onFallbackShow(ctx)
   }
 
-  hidePayButton()  { this.api?.hidePayButton(); }
-  cancel(id?: string) { this.api?.cancel(id); } // бросит ACTIVE_OPERATION при попытке после click
+  hidePayButton(): void { /* ... */ } // в fallback эмитит cancelled('app')
 
-  // опционально
-  requestPayment(req: PaymentRequest) {
-    if (!this.api?.requestPayment) throw new Error('NOT_SUPPORTED');
-    return this.api.requestPayment(req);
-  }
-
-  // ...приватные помощники: _validate, _buildDeepLink, _isMobile, _detectAppName
+  requestPayment(req: PaymentRequest): Promise<RequestPaymentResult> { /* ... */ }
 }
 ```
 
 ### 9.2. Использование в dApp
 
 ```ts
-const sdk = new InstantPaySDK();
+const sdk = new InstantPaySDK({
+  onFallbackShow: ({ deeplinkUrl, openDeeplink }) => {
+    const btn = document.getElementById('fallback');
+    if (btn) {
+      btn.textContent = 'Open in Tonkeeper';
+      btn.onclick = () => openDeeplink();
+    }
+  },
+  onFallbackHide: () => {
+    const btn = document.getElementById('fallback');
+    if (btn) btn.onclick = null;
+  }
+});
 
 sdk.events.on('handoff', (e) => {
-  // dApp/бэкенд начинает отслеживание по invoiceId/recipient/amount/asset/time-window
+  // dApp/бэкенд начинает отслеживание по invoiceId
   startTracking(e.invoiceId);
 });
 
@@ -393,30 +408,19 @@ sdk.events.on('sent', (e) => {
   acknowledge(e.invoiceId, e.boc);
 });
 
-// Пользователь выбирает тариф — просто «заменяем» счёт новым invoiceId
-function updatePlan(plan) {
-  sdk.setPayButton(
-    {
-      request: {
-        amount: plan.amountTon,               // "0.25"
-        recipient: 'EQD...recipient...',
-        invoiceId: crypto.randomUUID(),
-        asset: { type: 'ton' },
-        expiresAt: Math.floor(Date.now()/1000) + 10*60,
-        adnlAddress: 'ab12...cd34'           // опционально, hex64
-      },
-      label: 'buy',
-      instantPay: true
+function updatePlan(plan: { amountTon: string }) {
+  sdk.setPayButton({
+    request: {
+      amount: plan.amountTon,               // "0.25"
+      recipient: 'EQD...recipient...',
+      invoiceId: crypto.randomUUID(),
+      asset: { type: 'ton' },
+      expiresAt: Math.floor(Date.now()/1000) + 10*60,
+      adnlAddress: 'ab12...cd34'           // опционально, hex64
     },
-    {
-      onUnsupported: ({ url, open }) => {
-        const btn = document.getElementById('fallback');
-        btn.textContent = 'Открыть в Tonkeeper';
-        btn.onclick = open;
-        return () => { btn.onclick = null; };
-      }
-    }
-  );
+    label: 'buy',
+    instantPay: true
+  });
 }
 ```
 
