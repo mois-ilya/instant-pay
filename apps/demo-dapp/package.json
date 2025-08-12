@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "build": "vite build",
-    "dev": "vite",
+    "dev": "vite --host",
     "preview": "vite preview",
     "clean": "rm -rf dist"
   },
@@ -13,10 +13,13 @@
     "@ton/core": "^0.61.0",
     "@tonkeeper/instantpay-sdk": "workspace:*",
     "mock-wallet": "workspace:*",
-    "solid-js": "^1.9.7"
+    "solid-js": "^1.9.7",
+    "buffer": "^6.0.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.11",
+    "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
+    "@esbuild-plugins/node-modules-polyfill": "^0.2.2",
     "tailwindcss": "^4.1.11",
     "typescript": "^5.9.2",
     "vite": "^7.0.6",
@@ -26,8 +29,7 @@
     "tonkeeper",
     "instant-pay",
     "demo",
-    "dapp",
-    "solid"
+    "dapp"
   ],
   "license": "MIT"
 }

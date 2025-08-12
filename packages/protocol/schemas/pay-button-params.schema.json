@@ -1,0 +1,15 @@
+{
+  "$id": "https://schemas.instantpay.dev/pay-button-params.schema.json",
+  "title": "PayButtonParams",
+  "type": "object",
+  "required": ["request","label"],
+  "properties": {
+    "request": { "$ref": "payment-request.schema.json" },
+    "label": {
+      "type": "string",
+      "enum": ["buy","unlock","use","get","open","start","retry","show","play","try"]
+    },
+    "instantPay": { "type": "boolean" }
+  },
+  "additionalProperties": false
+}

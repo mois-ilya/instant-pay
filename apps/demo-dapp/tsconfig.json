@@ -12,7 +12,9 @@
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
+    "composite": true,
+    "noEmit": false,
+    "outDir": "dist-ts",
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
 

@@ -1,0 +1,63 @@
+{
+  "$id": "https://schemas.instantpay.dev/events.schema.json",
+  "title": "InstantPayEvent",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": ["type","handshake"],
+      "properties": {
+        "type": { "const": "ready" },
+        "handshake": {
+          "type": "object",
+          "required": ["protocolVersion","wallet"],
+          "properties": {
+            "protocolVersion": { "type": "string" },
+            "wallet": {
+              "type": "object",
+              "required": ["name"],
+              "properties": { "name": { "type": "string" } },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": ["type","invoiceId"],
+      "properties": { "type": { "const": "show" }, "invoiceId": { "type": "string", "format": "uuid" } },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": ["type","invoiceId"],
+      "properties": { "type": { "const": "click" }, "invoiceId": { "type": "string", "format": "uuid" } },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": ["type","invoiceId","boc"],
+      "properties": { "type": { "const": "sent" }, "invoiceId": { "type": "string", "format": "uuid" }, "boc": { "type": "string" } },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": ["type","invoiceId"],
+      "properties": { "type": { "const": "cancelled" }, "invoiceId": { "type": "string", "format": "uuid" }, "reason": { "type": "string", "enum": ["user","app","wallet","replaced","expired","unsupported_env"] } },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": ["type","invoiceId","url","scheme"],
+      "properties": {
+        "type": { "const": "handoff" },
+        "invoiceId": { "type": "string", "format": "uuid" },
+        "url": { "type": "string", "format": "uri" },
+        "scheme": { "type": "string", "enum": ["ton","https"] }
+      },
+      "additionalProperties": false
+    }
+  ]
+}

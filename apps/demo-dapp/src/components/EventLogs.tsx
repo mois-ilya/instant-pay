@@ -1,66 +1,110 @@
-import { Component, Show, For, onMount, createSignal } from 'solid-js';
-import { InstantPay, InstantPayEmitter, IPEvent } from '@tonkeeper/instantpay-sdk';
+import { Component, Show, For, createSignal, createEffect, onCleanup } from 'solid-js';
+import { InstantPay, InstantPayEmitter, InstantPayEvent } from '@tonkeeper/instantpay-sdk';
 
 interface EventLogsProps {
   instantPay: InstantPay | null;
 }
 
 export const EventLogs: Component<EventLogsProps> = (props) => {
-  const [events, setEvents] = createSignal<(IPEvent & { timestamp: number })[]>([]);
+  const [events, setEvents] = createSignal<((InstantPayEvent) & { timestamp: number })[]>([]);
   
   const formatTimestamp = (timestamp: number) => {
     return new Date(timestamp).toISOString();
   };
 
-  const getEventIcon = (type: IPEvent['type']) => {
+  const getEventIcon = (type: InstantPayEvent['type']) => {
     switch (type) {
+      case 'ready':
+        return '🚦';
+      case 'show':
+        return '🟩';
       case 'click':
         return '👆';
       case 'sent':
         return '✅';
       case 'cancelled':
         return '❌';
+      case 'handoff':
+        return '🔗';
       default:
         return '📝';
     }
   };
 
-  const getEventTypeClass = (type: IPEvent['type']) => {
+  const getEventTypeClass = (type: InstantPayEvent['type']) => {
     switch (type) {
+      case 'ready':
+        return 'font-bold text-purple-600 uppercase text-xs';
+      case 'show':
+        return 'font-bold text-emerald-600 uppercase text-xs';
       case 'click':
         return 'font-bold text-blue-600 uppercase text-xs';
       case 'sent':
         return 'font-bold text-green-600 uppercase text-xs';
       case 'cancelled':
         return 'font-bold text-red-600 uppercase text-xs';
+      case 'handoff':
+        return 'font-bold text-amber-600 uppercase text-xs';
       default:
         return 'font-bold text-slate-600 uppercase text-xs';
     }
   };
 
-  const formatEventData = (event: IPEvent) => {
-    const baseData = { invoiceId: event.invoiceId };
-    if (event.type === 'sent') {
-      return { ...baseData, boc: event.boc };
+  const formatEventData = (event: InstantPayEvent) => {
+    switch (event.type) {
+      case 'ready':
+        return event.handshake;
+      case 'handoff':
+        return { invoiceId: event.invoiceId, url: event.url, scheme: event.scheme };
+      case 'sent':
+        return { invoiceId: event.invoiceId, boc: event.boc };
+      case 'click':
+      case 'cancelled':
+      case 'show':
+        return { invoiceId: event.invoiceId };
+      default:
+        return {} as never;
     }
-    return baseData;
   };
 
-  onMount(() => {
-    if (props.instantPay) {
-      setupEventListeners(props.instantPay.events);
+  let cleanups: Array<() => void> = [];
+
+  createEffect(() => {
+    // Dispose previous listeners
+    for (const c of cleanups) {
+      try { c(); } catch { /* noop */ }
+    }
+    cleanups = [];
+
+    const sdk = props.instantPay;
+    if (sdk) {
+      const unsubs = setupEventListeners(sdk.events);
+      cleanups = unsubs;
+      // If SDK already performed handshake before we subscribed, synthesize ready
+      if (sdk.handshake) {
+        const event = { type: 'ready', handshake: sdk.handshake } as InstantPayEvent;
+        setEvents(prev => [{ ...event, timestamp: Date.now() }, ...prev]);
+      }
     }
   });
 
+  onCleanup(() => {
+    for (const c of cleanups) {
+      try { c(); } catch { /* noop */ }
+    }
+    cleanups = [];
+  });
 
-  const setupEventListeners = (events: InstantPayEmitter) => {
+
+  const setupEventListeners = (events: InstantPayEmitter): Array<() => void> => {
     console.log('[EventLogs] Setting up listeners for events emitter:', events);
     // Listen to all InstantPay events
-    const eventTypes: IPEvent['type'][] = ['click', 'sent', 'cancelled'];
+    const eventTypes: InstantPayEvent['type'][] = ['ready', 'show', 'click', 'sent', 'cancelled', 'handoff'];
     
+    const unsubs: Array<() => void> = [];
     eventTypes.forEach((eventType) => {
       console.log('[EventLogs] Adding listener for:', eventType);
-      events.on(eventType, (event) => {
+      const off = events.on(eventType, (event) => {
         console.log('[EventLogs] Received InstantPay event:', event);
         // Add event to the beginning of the array (newest first) with timestamp
         const eventWithTimestamp = { ...event, timestamp: Date.now() };
@@ -69,7 +113,10 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
           return [eventWithTimestamp, ...prev];
         });
       });
+      unsubs.push(off);
     });
+
+    return unsubs;
   };
 
   const clearEvents = () => {
@@ -77,7 +124,7 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
   };
 
   return (
-    <div class="bg-white rounded-xl p-5 shadow-sm h-fit">
+    <div class="bg-white rounded-xl p-5 shadow-sm h-full flex flex-col">
       {/* Header */}
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-xl font-semibold text-slate-800">Event Logs ({events.length})</h3>
@@ -90,7 +137,7 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
       </div>
 
       {/* Events List */}
-      <div class="max-h-96 overflow-y-auto border border-slate-200 rounded-lg">
+      <div class="flex-1 overflow-y-auto border border-slate-200 rounded-lg">
         <Show 
           when={events().length > 0}
           fallback={
