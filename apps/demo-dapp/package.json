@@ -29,8 +29,7 @@
     "tonkeeper",
     "instant-pay",
     "demo",
-    "dapp",
-    "solid"
+    "dapp"
   ],
   "license": "MIT"
 }
