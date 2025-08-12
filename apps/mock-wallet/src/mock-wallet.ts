@@ -24,6 +24,7 @@ export class MockWallet implements InstantPayAPI {
     private _current: PayButtonParams | null = null;
     private _clicked = false;
     private _overlayElement: HTMLElement | null = null;
+    private _confirmElement: HTMLElement | null = null;
 
     constructor() {
         this.events = new InstantPayEmitter();
@@ -150,6 +151,11 @@ export class MockWallet implements InstantPayAPI {
             this._overlayElement = null;
             document.body.classList.remove('mock-wallet-active');
         }
+        if (this._confirmElement) {
+            this._confirmElement.remove();
+            this._confirmElement = null;
+            document.body.classList.remove('mock-wallet-confirm-active');
+        }
     }
 
     /**
@@ -199,8 +205,14 @@ export class MockWallet implements InstantPayAPI {
                     return;
                 }
 
-                // Auto-confirm payment for mock
-                this._handleConfirm(params);
+            // Decide whether instant-confirm is supported by capabilities
+            if (this._isInstantSupported(params)) {
+              // Auto-confirm payment for mock
+              this._handleConfirm(params);
+            } else {
+              // Show in-page confirmation modal and wait for explicit approval
+              this._showConfirmationModal(params);
+            }
             }
         });
     }
@@ -225,6 +237,77 @@ export class MockWallet implements InstantPayAPI {
 
         console.log('[MockWallet] Payment confirmed for invoice:', params.request.invoiceId);
     }
+
+  /**
+   * Check whether instant payment is supported per capabilities and params
+   */
+  private _isInstantSupported(params: PayButtonParams): boolean {
+    // Require params.instantPay flag
+    if (!params.instantPay) return false;
+    const { asset, amount } = params.request;
+    const caps = this._capabilities.instant;
+    let capLimitStr: string | null = null;
+    for (const c of caps) {
+      if (asset.type === 'ton' && c.asset.type === 'ton') { capLimitStr = c.limit; break; }
+      if (asset.type === 'jetton' && c.asset.type === 'jetton' && c.asset.master === asset.master) { capLimitStr = c.limit; break; }
+    }
+    if (!capLimitStr) return false;
+    const limit = Number(capLimitStr);
+    const value = Number(amount);
+    if (!isFinite(limit) || !isFinite(value)) return false;
+    return value <= limit;
+  }
+
+  /**
+   * Show in-page confirmation modal for unsupported instant payments
+   */
+  private _showConfirmationModal(params: PayButtonParams): void {
+    const { request } = params;
+    if (this._confirmElement) {
+      try { this._confirmElement.remove(); } catch { /* noop */ }
+      this._confirmElement = null;
+    }
+    const currency = request.asset.type === 'jetton' ? 'TOKEN' : 'TON';
+    const container = document.createElement('div');
+    container.className = 'mock-wallet-confirm-backdrop';
+    container.innerHTML = `
+      <div class="mock-wallet-confirm-modal" role="dialog" aria-modal="true">
+        <div class="mock-wallet-confirm-title">Confirm Payment</div>
+        <div class="mock-wallet-confirm-content">
+          <div class="row"><span>Amount</span><strong>${request.amount} ${currency}</strong></div>
+          <div class="row"><span>Recipient</span><code>${request.recipient}</code></div>
+          <div class="row"><span>Invoice ID</span><code>${request.invoiceId}</code></div>
+          ${request.asset.type === 'jetton' ? `<div class="row"><span>Jetton</span><code>${request.asset.master}</code></div>` : ''}
+        </div>
+        <div class="mock-wallet-confirm-actions">
+          <button data-action="approve" class="approve">Approve</button>
+          <button data-action="cancel" class="cancel">Cancel</button>
+        </div>
+        <div class="mock-wallet-confirm-note">This payment exceeds instant limit or requires confirmation.</div>
+      </div>`;
+    document.body.appendChild(container);
+    document.body.classList.add('mock-wallet-confirm-active');
+    this._confirmElement = container;
+
+    const onClick = (e: Event) => {
+      const target = e.target as HTMLElement;
+      const btn = target && 'closest' in target ? (target.closest('[data-action]') as HTMLElement | null) : null;
+      const action = btn?.getAttribute('data-action');
+      if (!action) return;
+      if (action === 'approve') {
+        this._confirmElement?.remove();
+        this._confirmElement = null;
+        document.body.classList.remove('mock-wallet-confirm-active');
+        this._handleConfirm(params);
+      } else if (action === 'cancel') {
+        this._current = null;
+        this._clicked = false;
+        this._hideOverlay();
+        this.events.emit({ type: 'cancelled', invoiceId: request.invoiceId, reason: 'user' });
+      }
+    };
+    container.addEventListener('click', onClick);
+  }
 
 
 
@@ -263,6 +346,17 @@ export class MockWallet implements InstantPayAPI {
                 border-top: 1px solid rgba(0, 0, 0, 0.1);
                 padding: env(safe-area-inset-bottom, 0px) 0 0 0;
             }
+            /* Confirmation modal */
+            .mock-wallet-confirm-backdrop { position: fixed; inset: 0; z-index: 1000000; background: rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; }
+            .mock-wallet-confirm-modal { background:#fff; color:#0f172a; border-radius:12px; width:min(620px,92vw); box-shadow:0 10px 30px rgba(0,0,0,0.2); padding:16px; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+            .mock-wallet-confirm-title { font-size:16px; font-weight:700; margin-bottom:12px; }
+            .mock-wallet-confirm-content { display:grid; gap:8px; margin-bottom:12px; }
+            .mock-wallet-confirm-content .row { display:flex; align-items:center; gap:8px; }
+            .mock-wallet-confirm-content code { background:#f1f5f9; padding:2px 4px; border-radius:4px; }
+            .mock-wallet-confirm-actions { display:flex; gap:8px; margin-top:8px; }
+            .mock-wallet-confirm-actions .approve { background:#10b981; color:#fff; border:0; border-radius:8px; padding:10px 14px; font-weight:600; cursor:pointer; }
+            .mock-wallet-confirm-actions .cancel { background:#e2e8f0; color:#0f172a; border:0; border-radius:8px; padding:10px 14px; font-weight:600; cursor:pointer; }
+            .mock-wallet-confirm-note { color:#64748b; font-size:12px; margin-top:8px; }
             
             .mock-wallet-simple-container {
                 padding: 12px 16px;
@@ -301,6 +395,9 @@ export class MockWallet implements InstantPayAPI {
                     background: rgba(28, 28, 30, 0.95);
                     border-top: 1px solid rgba(255, 255, 255, 0.1);
                 }
+                .mock-wallet-confirm-modal { background:#1e293b; color:#e2e8f0; }
+                .mock-wallet-confirm-content code { background:#0f172a; color:#e2e8f0; }
+                .mock-wallet-confirm-actions .cancel { background:#334155; color:#e2e8f0; }
                 
                 .mock-wallet-simple-btn {
                     background: #0A84FF;

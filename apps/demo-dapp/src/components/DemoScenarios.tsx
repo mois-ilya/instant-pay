@@ -37,7 +37,7 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
           recipient: DEMO_RECIPIENT,
           invoiceId: crypto.randomUUID(),
           asset: { type: 'ton' },
-          expiresAt: Math.floor(Date.now()/1000) + 600
+          // expiresAt: Math.floor(Date.now()/1000) + 600
         },
         label: 'buy',
         instantPay: true
@@ -60,22 +60,54 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
       },
       expectedOutcome: 'Should show Pay button for jetton transaction'
     },
+    // {
+    //   id: 'expired',
+    //   title: 'Expired Invoice',
+    //   description: 'Invoice that is already expired',
+    //   params: {
+    //     request: {
+    //       amount: '0.2',
+    //       recipient: DEMO_RECIPIENT,
+    //       invoiceId: crypto.randomUUID(),
+    //       asset: { type: 'ton' },
+    //       // expiresAt: Math.floor(Date.now()/1000) - 10
+    //     },
+    //     label: 'retry',
+    //     instantPay: true
+    //   },
+    //   expectedOutcome: 'Wallet should emit cancelled(expired) on click'
+    // },
     {
-      id: 'expired',
-      title: 'Expired Invoice',
-      description: 'Invoice that is already expired',
+      id: 'instant-over-limit',
+      title: 'Instant Over Capabilities Limit',
+      description: 'Amount exceeds instant capability limit -> wallet shows confirm window (no sent)',
       params: {
         request: {
-          amount: '0.2',
+          amount: '9999',
           recipient: DEMO_RECIPIENT,
           invoiceId: crypto.randomUUID(),
-          asset: { type: 'ton' },
-          expiresAt: Math.floor(Date.now()/1000) - 10
+          asset: { type: 'ton' }
         },
-        label: 'retry',
+        label: 'buy',
         instantPay: true
       },
-      expectedOutcome: 'Wallet should emit cancelled(expired) on click'
+      expectedOutcome: 'Wallet emits click, opens confirmation popup; sent only after manual Approve'
+    },
+    {
+      id: 'no-instant-flag',
+      title: 'Instant Disabled Flag',
+      description: 'instantPay=false -> wallet requires confirmation (no auto sent)',
+      params: {
+        request: {
+          amount: '0.1',
+          recipient: DEMO_RECIPIENT,
+          invoiceId: crypto.randomUUID(),
+          asset: { type: 'ton' }
+        },
+        label: 'buy',
+        instantPay: false
+      },
+      expectedOutcome: 'Wallet emits click, opens confirmation popup; no sent until Approve'
     },
     {
       id: 'invalid-params',
@@ -256,13 +288,12 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
             <div class={`border border-slate-200 rounded-lg px-4 py-3 transition-colors ${activeScenario() === scenario.id ? 'bg-slate-50' : 'bg-white'}`}>
               {/* Top row: title, expected outcome, run button */}
               <div class="flex items-center justify-between gap-3">
-                <div class="min-w-0">
+                <div class="flex-1 min-w-0">
                   <div class="text-sm font-semibold text-slate-800 truncate">{scenario.title}</div>
-                  <div class="text-xs text-slate-500 truncate">{scenario.description}</div>
                 </div>
-                <div class="hidden md:block text-[11px] text-green-600 italic whitespace-nowrap mr-2">
+                {/* <div class="hidden md:block text-[11px] text-green-600 italic whitespace-nowrap mr-2">
                   {scenario.expectedOutcome}
-                </div>
+                </div> */}
                 <button
                   onClick={() => runScenario(scenario)}
                   disabled={!props.instantPay}
@@ -271,13 +302,17 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
                   Run
                 </button>
               </div>
+              {/* Description moved below title to avoid truncating the title */}
+              <div class="mt-1 text-xs text-slate-500 break-words">
+                {scenario.description}
+              </div>
 
               {/* Parameters line: compact monospace summary */}
-              <div class="mt-2 grid grid-cols-1 lg:grid-cols-3 gap-2">
+              <div class="mt-2 grid grid-cols-1 lg:grid-cols-2 gap-2">
                 <div class="bg-slate-50 rounded px-2 py-1 text-[11px] font-mono text-slate-700">
-                  amt={scenario.params.request.amount} label={scenario.params.label}
+                  amount={scenario.params.request.amount} label={scenario.params.label}
                 </div>
-                <div class="bg-slate-50 rounded px-2 py-1 text-[11px] font-mono text-slate-700">
+                <div class="bg-slate-100 rounded px-2 py-1 text-[11px] font-mono text-slate-700">
                   asset={scenario.params.request.asset.type === 'ton' ? 'TON' : `JETTON:${scenario.params.request.asset.master.slice(0,8)}…${scenario.params.request.asset.master.slice(-8)}`}
                 </div>
                 {scenario.params.request.expiresAt && (
