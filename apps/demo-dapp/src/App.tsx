@@ -36,15 +36,44 @@ export const App: Component = () => {
             const currency = request.asset.type === 'jetton' ? 'TOKEN' : 'TON';
             const cap = label.charAt(0).toUpperCase() + label.slice(1);
             a.textContent = `${cap} ${request.amount} ${currency}`;
-            // prefer https deeplink in anchor; click handler keeps popup flow
+            // ensure previous listeners (if any) are removed
+            const prevSingle = (a as unknown as { _fallbackHandler?: (e: Event) => void })._fallbackHandler;
+            if (prevSingle) a.removeEventListener('click', prevSingle);
+            const prevList = (a as unknown as { _fallbackHandlers?: Array<{ type: string; fn: (e: Event) => void }> })._fallbackHandlers;
+            if (prevList) { for (const { type, fn } of prevList) a.removeEventListener(type, fn as unknown as (e: Event) => void); }
+            // update href to actual deeplink
             a.href = deeplinkScheme === 'https' ? deeplinkUrl : deeplinkUrl.replace(/^ton:\/\//, 'https://app.tonkeeper.com/');
-            a.onclick = (e) => { e.preventDefault(); openDeeplink(); };
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            // attach multi-input listeners to ensure SDK captures click
+            let invoked = false;
+            const invoke = () => { if (invoked) return; invoked = true; openDeeplink({ noNavigate: true }); };
+            const onClick = (_e: Event) => { invoke(); };
+            const onAux = (e: MouseEvent) => { if (e.button === 1) invoke(); };
+            const onKey = (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') invoke(); };
+            a.addEventListener('click', onClick, { once: true });
+            a.addEventListener('auxclick', onAux as unknown as (e: Event) => void);
+            a.addEventListener('keydown', onKey as unknown as (e: Event) => void);
+            (a as unknown as { _fallbackHandlers?: Array<{ type: string; fn: (e: Event) => void }> })._fallbackHandlers = [
+                { type: 'click', fn: onClick as unknown as (e: Event) => void },
+                { type: 'auxclick', fn: onAux as unknown as (e: Event) => void },
+                { type: 'keydown', fn: onKey as unknown as (e: Event) => void },
+            ];
             a.classList.remove('hidden');
         },
         onFallbackHide: () => {
             const a = document.getElementById('fallback') as HTMLAnchorElement | null;
             if (!a) return;
-            a.onclick = null;
+            const prevSingle = (a as unknown as { _fallbackHandler?: (e: Event) => void })._fallbackHandler;
+            if (prevSingle) {
+                a.removeEventListener('click', prevSingle);
+                delete (a as unknown as { _fallbackHandler?: (e: Event) => void })._fallbackHandler;
+            }
+            const prevList = (a as unknown as { _fallbackHandlers?: Array<{ type: string; fn: (e: Event) => void }> })._fallbackHandlers;
+            if (prevList) {
+                for (const { type, fn } of prevList) a.removeEventListener(type, fn as unknown as (e: Event) => void);
+                delete (a as unknown as { _fallbackHandlers?: Array<{ type: string; fn: (e: Event) => void }> })._fallbackHandlers;
+            }
             a.classList.add('hidden');
         }};
 

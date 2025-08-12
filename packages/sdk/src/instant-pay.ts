@@ -73,7 +73,7 @@ export interface FallbackContext {
   payButtonParams: PayButtonParams;
   deeplinkUrl: string;
   deeplinkScheme: 'ton' | 'https';
-  openDeeplink: () => void;
+  openDeeplink: (opts?: { noNavigate?: boolean }) => void;
   invoiceBocBase64: string;
 }
 
@@ -159,8 +159,11 @@ export class InstantPaySDK {
     }
 
     const { url, scheme, bin } = this._buildDeepLink(params.request);
+    let handoffStarted = false;
 
-    const openDeeplink = () => {
+    const openDeeplink = (opts?: { noNavigate?: boolean }) => {
+      if (handoffStarted) return;
+      handoffStarted = true;
       // Emit click before handoff; check expiry first
       const nowSec = Math.floor(Date.now() / 1000);
       if (params.request.expiresAt && params.request.expiresAt <= nowSec) {
@@ -169,13 +172,25 @@ export class InstantPaySDK {
       }
       this.events.emit({ type: 'click', invoiceId: params.request.invoiceId });
 
-      // Force HTTPS deeplink for compatibility; try new tab first
+      // Force HTTPS deeplink for compatibility; emit handoff, then try new tab
       const openUrl = scheme === 'https' ? url : url.replace(/^ton:\/\//, 'https://app.tonkeeper.com/');
-      const win = window.open(openUrl, '_blank', 'noopener,noreferrer');
-      if (!win) {
-        window.location.href = openUrl;
-      }
       this.events.emit({ type: 'handoff', invoiceId: params.request.invoiceId, url: openUrl, scheme: 'https' });
+      if (!opts?.noNavigate) {
+        const win = window.open(openUrl, '_blank', 'noopener,noreferrer');
+        if (!win) {
+          // Defer same-tab navigation enough for event handlers/UI to render
+          const navigate = () => { window.location.href = openUrl; };
+          try {
+            if (typeof requestAnimationFrame === 'function') {
+              requestAnimationFrame(() => { setTimeout(navigate, 0); });
+            } else {
+              setTimeout(navigate, 32);
+            }
+          } catch {
+            setTimeout(navigate, 32);
+          }
+        }
+      }
       // Hide fallback UI after handoff
       try { this.onFallbackHide?.(); } catch { /* noop */ }
       this.activeFallback = null;
