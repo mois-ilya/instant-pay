@@ -14,9 +14,6 @@ export type InstantPayEvent =
         wallet: {
           name: string;
         };
-        privacy: {
-          exposesAccount: false;
-        };
       };
     }
   | {

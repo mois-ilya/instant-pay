@@ -1,49 +1,56 @@
 import { Component, Show, For, onMount, createSignal } from 'solid-js';
-import { InstantPay, InstantPayEmitter, IPEvent } from '@tonkeeper/instantpay-sdk';
+import { InstantPay, InstantPayEmitter, InstantPayEvent } from '@tonkeeper/instantpay-sdk';
 
 interface EventLogsProps {
   instantPay: InstantPay | null;
 }
 
 export const EventLogs: Component<EventLogsProps> = (props) => {
-  const [events, setEvents] = createSignal<(IPEvent & { timestamp: number })[]>([]);
+  const [events, setEvents] = createSignal<(InstantPayEvent & { timestamp: number })[]>([]);
   
   const formatTimestamp = (timestamp: number) => {
     return new Date(timestamp).toISOString();
   };
 
-  const getEventIcon = (type: IPEvent['type']) => {
+  const getEventIcon = (type: InstantPayEvent['type']) => {
     switch (type) {
+      case 'ready':
+        return '🚦';
       case 'click':
         return '👆';
       case 'sent':
         return '✅';
       case 'cancelled':
         return '❌';
+      case 'handoff':
+        return '🔗';
       default:
         return '📝';
     }
   };
 
-  const getEventTypeClass = (type: IPEvent['type']) => {
+  const getEventTypeClass = (type: InstantPayEvent['type']) => {
     switch (type) {
+      case 'ready':
+        return 'font-bold text-purple-600 uppercase text-xs';
       case 'click':
         return 'font-bold text-blue-600 uppercase text-xs';
       case 'sent':
         return 'font-bold text-green-600 uppercase text-xs';
       case 'cancelled':
         return 'font-bold text-red-600 uppercase text-xs';
+      case 'handoff':
+        return 'font-bold text-amber-600 uppercase text-xs';
       default:
         return 'font-bold text-slate-600 uppercase text-xs';
     }
   };
 
-  const formatEventData = (event: IPEvent) => {
-    const baseData = { invoiceId: event.invoiceId };
-    if (event.type === 'sent') {
-      return { ...baseData, boc: event.boc };
-    }
-    return baseData;
+  const formatEventData = (event: InstantPayEvent) => {
+    if (event.type === 'ready') return event.handshake;
+    if (event.type === 'handoff') return { invoiceId: event.invoiceId, url: event.url, scheme: event.scheme };
+    if (event.type === 'sent') return { invoiceId: event.invoiceId, boc: event.boc };
+    return { invoiceId: (event as any).invoiceId };
   };
 
   onMount(() => {
@@ -56,7 +63,7 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
   const setupEventListeners = (events: InstantPayEmitter) => {
     console.log('[EventLogs] Setting up listeners for events emitter:', events);
     // Listen to all InstantPay events
-    const eventTypes: IPEvent['type'][] = ['click', 'sent', 'cancelled'];
+    const eventTypes: InstantPayEvent['type'][] = ['ready', 'click', 'sent', 'cancelled', 'handoff'];
     
     eventTypes.forEach((eventType) => {
       console.log('[EventLogs] Adding listener for:', eventType);

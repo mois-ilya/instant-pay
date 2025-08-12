@@ -72,7 +72,6 @@ export interface AppMeta {
 export interface Handshake {
   protocolVersion: InstantPaySemver;
   wallet: { name: string };            // без версии/адресов
-  privacy: { exposesAccount: false };  // явная гарантия
 }
 ```
 
@@ -409,7 +408,7 @@ function updatePlan(plan) {
 ## 10. Требования к кошельку (референс/мок)
 
 * Инжектировать `window.tonkeeper.instantPay` **до загрузки dApp** (раньше первого вызова).
-* `handshake()` — синхронный, мгновенно возвращает `protocolVersion`, `wallet.name`, `privacy`.
+* `handshake()` — синхронный, мгновенно возвращает `protocolVersion`, `wallet.name`.
 * `setPayButton()`:
 
   * До клика: замена текущего счёта, эмит `cancelled(replaced)` для старого.
@@ -484,11 +483,10 @@ function updatePlan(plan) {
         "type": { "const": "ready" },
         "handshake": {
           "type": "object",
-          "required": ["protocolVersion","wallet","privacy"],
+          "required": ["protocolVersion","wallet"],
           "properties": {
             "protocolVersion": { "type": "string" },
-            "wallet": { "type": "object", "required": ["name"], "properties": { "name": { "type": "string" } }, "additionalProperties": false },
-            "privacy": { "type": "object", "required": ["exposesAccount"], "properties": { "exposesAccount": { "const": false } }, "additionalProperties": false }
+            "wallet": { "type": "object", "required": ["name"], "properties": { "name": { "type": "string" } }, "additionalProperties": false },{ "const": false } }, "additionalProperties": false }
           },
           "additionalProperties": false
         }

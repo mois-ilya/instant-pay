@@ -9,19 +9,13 @@
         "type": { "const": "ready" },
         "handshake": {
           "type": "object",
-          "required": ["protocolVersion","wallet","privacy"],
+          "required": ["protocolVersion","wallet"],
           "properties": {
             "protocolVersion": { "type": "string" },
             "wallet": {
               "type": "object",
               "required": ["name"],
               "properties": { "name": { "type": "string" } },
-              "additionalProperties": false
-            },
-            "privacy": {
-              "type": "object",
-              "required": ["exposesAccount"],
-              "properties": { "exposesAccount": { "const": false } },
               "additionalProperties": false
             }
           },

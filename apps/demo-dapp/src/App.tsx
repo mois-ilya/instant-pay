@@ -1,5 +1,5 @@
 import { Component, createMemo, createSignal, onMount } from 'solid-js';
-import { InstantPay, InstantPayAPI } from '@tonkeeper/instantpay-sdk';
+import { InstantPay as InstantPay, InstantPayAPI } from '@tonkeeper/instantpay-sdk';
 import { initMockWallet } from 'mock-wallet';
 import { WalletStatus } from './components/WalletStatus';
 import { EventLogs } from './components/EventLogs';
@@ -35,33 +35,32 @@ export const App: Component = () => {
     });
 
     return (
-        <div class="max-w-6xl mx-auto p-5 font-sans">
-            {/* Header */}
-            <header class="text-center mb-10 p-5 bg-white rounded-xl shadow-sm">
-                <h1 class="text-3xl font-bold text-slate-800 mb-2">
-                    InstantPay Demo dApp
-                </h1>
-                <p class="text-slate-600">
-                    Demonstration of all InstantPay protocol features
-                </p>
-            </header>
-
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
-                {/* Wallet Status */}
-                <WalletStatus
-                    walletType={walletType()}
-                    config={instantPay()?.config}
-                />
-
-                {/* Event Logs */}
-                <EventLogs instantPay={instantPay()} />
+        <div class="font-sans">
+            {/* Full-width status bar */}
+            <div class="w-full"> 
+                <WalletStatus walletType={walletType()} handshake={instantPay()?.handshake} />
             </div>
 
-            {/* Demo Scenarios */}
-            <DemoScenarios
-                instantPay={instantPay()}
-                walletType={walletType()}
-            />
+            <div class="max-w-6xl mx-auto p-5">
+                {/* Header */}
+                <header class="text-center mb-6 p-5 bg-white rounded-xl shadow-sm">
+                    <h1 class="text-3xl font-bold text-slate-800 mb-2">
+                        InstantPay Demo dApp
+                    </h1>
+                    <p class="text-slate-600">
+                        Demonstration of all InstantPay protocol features
+                    </p>
+                </header>
+
+                {/* Scenarios and Logs: scenarios first, then logs on mobile; side-by-side on desktop */}
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+                    {/* Demo Scenarios */}
+                    <DemoScenarios instantPay={instantPay()} walletType={walletType()} />
+
+                    {/* Event Logs */}
+                    <EventLogs instantPay={instantPay()} />
+                </div>
+            </div>
         </div>
     );
 };

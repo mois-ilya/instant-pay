@@ -10,6 +10,16 @@ import type { PayButtonParams, PaymentRequest } from '@tonkeeper/instantpay-prot
 import { validatePayButtonParams } from './validation';
 import { InstantPayInvalidParamsError } from './errors';
 import { beginCell } from '@ton/core';
+import { Buffer } from 'buffer';
+
+// Ensure global Buffer is available in browsers for dependencies that expect it
+// without explicit import (e.g., some parts of @ton/core or userland code)
+// Safe no-op in Node where Buffer already exists
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const g: any = (typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : {}));
+if (!g.Buffer) {
+  g.Buffer = Buffer;
+}
 
 // Types defined by the protocol (not exported from protocol package)
 export type InstantPaySemver = `${number}.${number}.${number}`;
@@ -23,7 +33,6 @@ export interface AppMeta {
 export interface Handshake {
   protocolVersion: InstantPaySemver;
   wallet: { name: string };
-  privacy: { exposesAccount: false };
 }
 
 export type CancelReason = 'user' | 'app' | 'wallet' | 'replaced' | 'expired' | 'unsupported_env';

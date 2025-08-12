@@ -32,7 +32,6 @@ export function initMockWallet(): void {
     window.tonkeeper.instantPay = mockWallet;
     
     console.log('[MockWallet] Mock wallet injected successfully');
-    console.log('[MockWallet] Configuration:', mockWallet.config);
 }
 
 /**

@@ -1,15 +1,13 @@
 import { Component, createSignal, Show, For } from 'solid-js';
 import { 
-  InstantPayAPI, 
-  SetPayButtonParams,
-  InstantPayInvalidParamsError,
-  InstantPayLimitExceededError,
-  InstantPayConcurrentOperationError
+  InstantPay as InstantPay,
+  PayButtonParams,
+  InstantPayInvalidParamsError
 } from '@tonkeeper/instantpay-sdk';
 import { WalletType } from '../App';
 
 interface DemoScenariosProps {
-  instantPay: InstantPayAPI | null;
+  instantPay: InstantPay | null;
   walletType: WalletType;
 }
 
@@ -17,7 +15,7 @@ interface ScenarioConfig {
   id: string;
   title: string;
   description: string;
-  params: SetPayButtonParams;
+  params: Omit<PayButtonParams, 'request'> & { request: PayButtonParams['request'] };
   expectedOutcome: string;
 }
 
@@ -32,49 +30,66 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
     {
       id: 'basic-ton',
       title: 'Basic TON Payment',
-      description: 'Simple TON payment within limits',
+      description: 'Simple TON payment',
       params: {
-        amount: '0.1',
-        recipient: DEMO_RECIPIENT,
+        request: {
+          amount: '0.1',
+          recipient: DEMO_RECIPIENT,
+          invoiceId: crypto.randomUUID(),
+          asset: { type: 'ton' },
+          expiresAt: Math.floor(Date.now()/1000) + 600
+        },
         label: 'buy',
-        invoiceId: crypto.randomUUID()
+        instantPay: true
       },
       expectedOutcome: 'Should show Pay button and allow transaction'
     },
     {
-      id: 'with-jetton',
+      id: 'jetton',
       title: 'Jetton Payment',
       description: 'Payment using a jetton token',
       params: {
-        amount: '10',
-        recipient: DEMO_RECIPIENT,
+        request: {
+          amount: '10',
+          recipient: DEMO_RECIPIENT,
+          invoiceId: crypto.randomUUID(),
+          asset: { type: 'jetton', master: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs' }
+        },
         label: 'unlock',
-        invoiceId: crypto.randomUUID(),
-        jetton: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs' // USDT
+        instantPay: true
       },
       expectedOutcome: 'Should show Pay button for jetton transaction'
     },
     {
-      id: 'limit-exceeded',
-      title: 'Limit Exceeded',
-      description: 'Payment amount exceeds instant pay limit',
+      id: 'expired',
+      title: 'Expired Invoice',
+      description: 'Invoice that is already expired',
       params: {
-        amount: '100',
-        recipient: DEMO_RECIPIENT,
-        label: 'buy',
-        invoiceId: crypto.randomUUID()
+        request: {
+          amount: '0.2',
+          recipient: DEMO_RECIPIENT,
+          invoiceId: crypto.randomUUID(),
+          asset: { type: 'ton' },
+          expiresAt: Math.floor(Date.now()/1000) - 10
+        },
+        label: 'retry',
+        instantPay: true
       },
-      expectedOutcome: 'Should throw InstantPayLimitExceededError'
+      expectedOutcome: 'Wallet should emit cancelled(expired) on click'
     },
     {
       id: 'invalid-params',
       title: 'Invalid Parameters',
       description: 'Payment with invalid recipient address',
       params: {
-        amount: '1',
-        recipient: 'invalid-address',
+        request: {
+          amount: '1',
+          recipient: 'invalid-address',
+          invoiceId: crypto.randomUUID(),
+          asset: { type: 'ton' }
+        },
         label: 'buy',
-        invoiceId: crypto.randomUUID()
+        instantPay: true
       },
       expectedOutcome: 'Should throw InstantPayInvalidParamsError'
     },
@@ -83,24 +98,32 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
       title: 'Different Pay Labels',
       description: 'Test various pay button labels',
       params: {
-        amount: '0.5',
-        recipient: DEMO_RECIPIENT,
+        request: {
+          amount: '0.5',
+          recipient: DEMO_RECIPIENT,
+          invoiceId: crypto.randomUUID(),
+          asset: { type: 'ton' }
+        },
         label: 'try',
-        invoiceId: crypto.randomUUID()
+        instantPay: true
       },
       expectedOutcome: 'Should show Pay button with "try" label'
     },
     {
-      id: 'hide-on-limit-exceeded',
-      title: 'Hide Button on Limit Exceeded',
-      description: 'Show button first, then try to exceed limit - button should hide',
+      id: 'replacement',
+      title: 'Replacement before click',
+      description: 'Second setPayButton replaces first and emits cancelled(replaced)',
       params: {
-        amount: '0.1', // Valid amount initially
-        recipient: DEMO_RECIPIENT,
+        request: {
+          amount: '0.3',
+          recipient: DEMO_RECIPIENT,
+          invoiceId: crypto.randomUUID(),
+          asset: { type: 'ton' }
+        },
         label: 'buy',
-        invoiceId: crypto.randomUUID()
+        instantPay: true
       },
-      expectedOutcome: 'Should show button first, then hide it when limit exceeded'
+      expectedOutcome: 'Should emit cancelled(replaced) for the first invoice'
     }
   ];
 
@@ -115,45 +138,34 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
 
     try {
       // Generate new invoiceId for each run
-      const params = {
+      const params: PayButtonParams = {
         ...scenario.params,
-        invoiceId: crypto.randomUUID()
+        request: { ...scenario.params.request, invoiceId: crypto.randomUUID() }
       };
 
       console.log('Running scenario:', scenario.title, params);
       
-      // Special handling for hide-on-limit-exceeded scenario
-      if (scenario.id === 'hide-on-limit-exceeded') {
-        // First, show a valid button
-        console.log('Step 1: Showing valid button');
+      if (scenario.id === 'replacement') {
+        // First set
         props.instantPay.setPayButton(params);
-        
-        // Wait a moment to let user see the button
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Then try to show a button with exceeded limit - this should hide the first button
-        console.log('Step 2: Trying to show button with exceeded limit');
-        const exceedingParams = {
+        await new Promise(r => setTimeout(r, 500));
+        // Replace before click with new invoiceId
+        const replacement: PayButtonParams = {
           ...params,
-          amount: '100', // This exceeds the limit
-          invoiceId: crypto.randomUUID() // New invoice ID
+          request: { ...params.request, invoiceId: crypto.randomUUID() },
         };
-        
-        try {
-          props.instantPay.setPayButton(exceedingParams);
-        } catch (limitErr) {
-          if (limitErr instanceof InstantPayLimitExceededError) {
-            console.log('Expected: Button was hidden due to limit exceeded');
-            setError(`Expected behavior: Button hidden due to limit exceeded - ${limitErr.message}`);
-          } else {
-            throw limitErr;
-          }
-        }
+        props.instantPay.setPayButton(replacement);
       } else {
-        props.instantPay.setPayButton(params);
-        
-        // Success - button should be visible
-        console.log('Scenario executed successfully');
+        props.instantPay.setPayButton(params, {
+          onUnsupported: ({ open }) => {
+            const btn = document.getElementById('fallback');
+            if (btn) {
+              btn.textContent = 'Open in Tonkeeper';
+              (btn as HTMLButtonElement).onclick = open;
+              return () => { (btn as HTMLButtonElement).onclick = null; };
+            }
+          }
+        });
       }
       
     } catch (err) {
@@ -161,10 +173,6 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
       
       if (err instanceof InstantPayInvalidParamsError) {
         setError(`Invalid Parameters: ${err.message}`);
-      } else if (err instanceof InstantPayLimitExceededError) {
-        setError(`Limit Exceeded: ${err.message} (Limit: ${err.limit}, Invoice: ${err.invoiceId})`);
-      } else if (err instanceof InstantPayConcurrentOperationError) {
-        setError(`Concurrent Operation: ${err.message} (Active: ${err.activeInvoiceId})`);
       } else {
         setError(`Unknown error: ${err instanceof Error ? err.message : String(err)}`);
       }
@@ -180,10 +188,7 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
   };
 
   const cycleThroughLabels = () => {
-    const config = props.instantPay?.config;
-    if (!config) return;
-    
-    const labels = config.labels;
+    const labels = ['buy','unlock','use','get','open','start','retry','show','play','try'] as const;
     let currentIndex = 0;
     
     const cycle = () => {
@@ -192,11 +197,15 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
         return;
       }
       
-      const params: SetPayButtonParams = {
-        amount: '0.1',
-        recipient: DEMO_RECIPIENT,
+      const params: PayButtonParams = {
+        request: {
+          amount: '0.1',
+          recipient: DEMO_RECIPIENT,
+          invoiceId: crypto.randomUUID(),
+          asset: { type: 'ton' }
+        },
         label: labels[currentIndex],
-        invoiceId: crypto.randomUUID()
+        instantPay: true
       };
       
       try {
@@ -232,10 +241,13 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
           >
             Hide Pay Button
           </button>
+          <button id="fallback" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors">
+            Fallback (deep link)
+          </button>
           
           <button
             onClick={cycleThroughLabels}
-            disabled={!props.instantPay?.config?.labels?.length}
+            disabled={!props.instantPay}
             class="bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
           >
             Cycle Through Labels
@@ -266,11 +278,11 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
                 <p class="text-sm text-slate-600 mb-3 leading-relaxed">{scenario.description}</p>
 
                 <div class="bg-slate-50 rounded p-2 mb-3 text-xs font-mono space-y-1">
-                  <div><strong>Amount:</strong> {scenario.params.amount}</div>
+                  <div><strong>Amount:</strong> {scenario.params.request.amount}</div>
                   <div><strong>Label:</strong> {scenario.params.label}</div>
-                  {scenario.params.jetton && (
-                    <div><strong>Jetton:</strong> {scenario.params.jetton.slice(0, 20)}...</div>
-                  )}
+                  <Show when={scenario.params.request.asset.type === 'jetton'}>
+                    <div><strong>Jetton:</strong> {(scenario.params.request.asset.type === 'jetton' ? scenario.params.request.asset.master.slice(0, 20) : '')}...</div>
+                  </Show>
                 </div>
 
                 <div class="text-xs text-green-600 mb-3 italic">

@@ -1,44 +1,14 @@
 /**
- * Mock Wallet Implementation
- * 
- * Mock implementation of InstantPay API for testing and development.
- * Shows a UI overlay for payment confirmation/cancellation.
+ * Mock Wallet Implementation (InstantPay 1.0)
  */
 
-import type {
-    Config as InstantPayConfig,
-    SetPayButtonParams
-} from '@tonkeeper/instantpay-protocol';
-import { InstantPayEmitter, InstantPayAPI } from '@tonkeeper/instantpay-sdk';
-import { validateSetPayButtonParams } from '@tonkeeper/instantpay-sdk';
-import {
-    InstantPayInvalidParamsError,
-    InstantPayLimitExceededError,
-    InstantPayConcurrentOperationError
-} from '@tonkeeper/instantpay-sdk';
+import { InstantPayEmitter } from '@tonkeeper/instantpay-sdk';
+import type { InstantPayAPI, Handshake } from '@tonkeeper/instantpay-sdk';
+import type { PayButtonParams, PaymentRequest } from '@tonkeeper/instantpay-protocol';
+import { validatePayButtonParams } from '@tonkeeper/instantpay-sdk';
+import { InstantPayInvalidParamsError } from '@tonkeeper/instantpay-sdk';
 
-/**
- * Mock wallet configuration for testing
- */
-const MOCK_CONFIG: InstantPayConfig = {
-    network: 'testnet',
-    tonLimit: '1.0',
-    jettons: [
-        {
-            symbol: 'USDT',
-            address: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs',
-            decimals: 6,
-            limit: '1000'
-        },
-        {
-            symbol: 'USDC',
-            address: 'EQB-MPwrd1G6WKNkLz_VnV6WqBDd142KMQv-g1SYRlLN20wH',
-            decimals: 6,
-            limit: '1000'
-        }
-    ],
-    labels: ['buy', 'unlock', 'use', 'get', 'open', 'start', 'retry', 'show', 'play', 'try']
-};
+// v1 mock has no extended runtime config
 
 
 
@@ -47,61 +17,39 @@ const MOCK_CONFIG: InstantPayConfig = {
  * Implements InstantPay API with simple pay button for mobile dApp browsers
  */
 export class MockWallet implements InstantPayAPI {
-    public readonly config: InstantPayConfig;
+    public readonly protocolVersion = '1.0.0' as const;
     public readonly events: InstantPayEmitter;
 
-    private _activeParams: SetPayButtonParams | null = null;
+    private _current: PayButtonParams | null = null;
+    private _clicked = false;
     private _overlayElement: HTMLElement | null = null;
-    private _paymentInProgress: boolean = false;
 
-    constructor(config: InstantPayConfig = MOCK_CONFIG) {
-        this.config = config;
+    constructor() {
         this.events = new InstantPayEmitter();
-        
-        // Inject styles
         this._injectStyles();
     }
 
-    /**
-     * Render or update the Pay button overlay
-     */
-    setPayButton(params: SetPayButtonParams): void {
-        // Validate parameters
-        const validation = validateSetPayButtonParams(params, this.config);
-        if (!validation.valid) {
-            throw new InstantPayInvalidParamsError(
-                validation.error || 'Invalid parameters'
-            );
+    handshake(_app: { name: string; url?: string; iconUrl?: string }, require?: { minProtocol?: `${number}.${number}.${number}` }): Handshake {
+        if (require?.minProtocol && this._compareSemver(this.protocolVersion, require.minProtocol) < 0) {
+            throw new Error('INCOMPATIBLE_VERSION');
+        }
+        return {
+            protocolVersion: this.protocolVersion,
+            wallet: { name: 'MockWallet' },
+        };
+    }
+
+    setPayButton(params: PayButtonParams): void {
+        const v = validatePayButtonParams(params);
+        if (!v.valid) throw new InstantPayInvalidParamsError(v.error);
+        if (this._clicked) throw new Error('ACTIVE_OPERATION');
+
+        // Replacement semantics before click
+        if (this._current && this._current.request.invoiceId !== params.request.invoiceId) {
+            this.events.emit({ type: 'cancelled', invoiceId: this._current.request.invoiceId, reason: 'replaced' });
         }
 
-        // Check for concurrent operations - only if payment is in progress (clicked but not sent)
-        if (this._paymentInProgress && this._activeParams && this._activeParams.invoiceId !== params.invoiceId) {
-            throw new InstantPayConcurrentOperationError(
-                'Another payment operation is already in progress',
-                this._activeParams.invoiceId
-            );
-        }
-
-        // Check payment limits
-        const limitCheck = this._checkPaymentLimits(params);
-        if (!limitCheck.valid) {
-            // If there's an active button, hide it first
-            if (this._activeParams) {
-                this._hideOverlay();
-                this._activeParams = null;
-                this._paymentInProgress = false;
-            }
-            
-            throw new InstantPayLimitExceededError(
-                limitCheck.error!,
-                params.invoiceId,
-                limitCheck.limit!
-            );
-        }
-
-        // Store active params and show overlay
-        this._activeParams = params;
-        this._paymentInProgress = false; // Reset payment progress state
+        this._current = params;
         this._showPayButtonOverlay(params);
     }
 
@@ -109,77 +57,49 @@ export class MockWallet implements InstantPayAPI {
      * Hide the pay button overlay
      */
     hidePayButton(): void {
-        if (this._activeParams) {
-            const invoiceId = this._activeParams.invoiceId;
-            this._activeParams = null;
-            this._paymentInProgress = false;
+        if (this._current) {
+            const invoiceId = this._current.request.invoiceId;
+            this._current = null;
+            this._clicked = false;
             this._hideOverlay();
-
-            // Emit cancelled event
-            this.events.emit({
-                type: 'cancelled',
-                invoiceId
-            });
+            this.events.emit({ type: 'cancelled', invoiceId, reason: 'app' });
+        } else {
+            // Idempotent: still hide overlay if any
+            this._hideOverlay();
         }
     }
 
-    /**
-     * Get current active invoice ID
-     */
-    get activeInvoiceId(): string | null {
-        return this._activeParams?.invoiceId || null;
+    getActive(): { invoiceId: string } | null {
+        return this._current ? { invoiceId: this._current.request.invoiceId } : null;
     }
+
+    cancel(invoiceId?: string): void {
+        if (this._clicked) throw new Error('ACTIVE_OPERATION');
+        if (!this._current) return;
+        if (!invoiceId || invoiceId === this._current.request.invoiceId) {
+            const id = this._current.request.invoiceId;
+            this._current = null;
+            this._hideOverlay();
+            this.events.emit({ type: 'cancelled', invoiceId: id, reason: 'app' });
+        }
+    }
+
+    async requestPayment(_req: PaymentRequest): Promise<{ status: 'sent'; boc: string } | { status: 'cancelled'; reason?: 'user' | 'app' | 'wallet' | 'replaced' | 'expired' | 'unsupported_env' }> {
+        // For mock, immediately send
+        return { status: 'sent', boc: this._generateMockBoc() };
+    }
+
+    // activeInvoiceId accessor removed in v1 mock
 
     /**
      * Check if payment amount exceeds limits
      */
-    private _checkPaymentLimits(params: SetPayButtonParams): {
-        valid: boolean;
-        error?: string;
-        limit?: string;
-    } {
-        const amount = parseFloat(params.amount);
-
-        if (params.jetton) {
-            // Check jetton limits
-            const jetton = this.config.jettons.find(
-                (j) => j.address === params.jetton
-            );
-            if (!jetton) {
-                return {
-                    valid: false,
-                    error: 'Unsupported jetton',
-                    limit: '0',
-                };
-            }
-
-            const limit = parseFloat(jetton.limit);
-            if (amount > limit) {
-                return {
-                    valid: false,
-                    error: `Amount ${params.amount} exceeds jetton limit`,
-                    limit: jetton.limit,
-                };
-            }
-        } else {
-            // Check TON limits
-            const limit = parseFloat(this.config.tonLimit);
-            if (amount > limit) {
-                return {
-                    valid: false,
-                    error: `Amount ${params.amount} exceeds TON limit`,
-                    limit: this.config.tonLimit,
-                };
-            }
-        }
-
-        return { valid: true };
-    }
+    // limits not used in v1 spec
 
     /**
      * Show the simplified pay button for mobile dApp browsers
      */
-    private _showPayButtonOverlay(params: SetPayButtonParams): void {
+    private _showPayButtonOverlay(params: PayButtonParams): void {
         // Remove existing overlay
         this._hideOverlay();
 
@@ -195,7 +115,7 @@ export class MockWallet implements InstantPayAPI {
         // Add event listeners
         this._attachButtonEvents(params);
 
-        console.log('[MockWallet] Simple pay button shown for invoice:', params.invoiceId);
+        console.log('[MockWallet] Simple pay button shown for invoice:', params.request.invoiceId);
     }
 
     /**
@@ -212,15 +132,13 @@ export class MockWallet implements InstantPayAPI {
     /**
      * Create simple button HTML for mobile dApp browsers
      */
-    private _createSimpleButtonHTML(params: SetPayButtonParams): string {
-        const currency = params.jetton 
-            ? this.config.jettons.find(j => j.address === params.jetton)?.symbol || 'TOKEN'
-            : 'TON';
+    private _createSimpleButtonHTML(params: PayButtonParams): string {
+        const currency = params.request.asset.type === 'jetton' ? 'TOKEN' : 'TON';
             
         return `
             <div class="mock-wallet-simple-container">
                 <button class="mock-wallet-simple-btn" data-action="pay">
-                    ${params.label.charAt(0).toUpperCase() + params.label.slice(1)} ${params.amount} ${currency}
+                    ${params.label.charAt(0).toUpperCase() + params.label.slice(1)} ${params.request.amount} ${currency}
                 </button>
             </div>
         `;
@@ -229,7 +147,7 @@ export class MockWallet implements InstantPayAPI {
     /**
      * Attach event listeners to simple pay button
      */
-    private _attachButtonEvents(params: SetPayButtonParams): void {
+    private _attachButtonEvents(params: PayButtonParams): void {
         if (!this._overlayElement) return;
 
         // Handle button click
@@ -238,16 +156,26 @@ export class MockWallet implements InstantPayAPI {
             const action = target.getAttribute('data-action');
 
             if (action === 'pay') {
-                // Mark payment as in progress
-                this._paymentInProgress = true;
+                // Mark clicked
+                this._clicked = true;
                 
                 // Emit click event
                 this.events.emit({
                     type: 'click',
-                    invoiceId: params.invoiceId
+                    invoiceId: params.request.invoiceId
                 });
                 
-                // Auto-confirm payment for simplified mobile experience
+                // Check expiry
+                const nowSec = Math.floor(Date.now()/1000);
+                if (params.request.expiresAt && params.request.expiresAt <= nowSec) {
+                    this._hideOverlay();
+                    this._current = null;
+                    this._clicked = false;
+                    this.events.emit({ type: 'cancelled', invoiceId: params.request.invoiceId, reason: 'expired' });
+                    return;
+                }
+
+                // Auto-confirm payment for mock
                 this._handleConfirm(params);
             }
         });
@@ -256,9 +184,9 @@ export class MockWallet implements InstantPayAPI {
     /**
      * Handle payment confirmation
      */
-    private _handleConfirm(params: SetPayButtonParams): void {
-        this._activeParams = null;
-        this._paymentInProgress = false; // Reset payment progress
+    private _handleConfirm(params: PayButtonParams): void {
+        this._current = null;
+        this._clicked = false;
         this._hideOverlay();
 
         // Generate mock BOC (transaction hash)
@@ -267,11 +195,11 @@ export class MockWallet implements InstantPayAPI {
         // Emit sent event
         this.events.emit({
             type: 'sent',
-            invoiceId: params.invoiceId,
+            invoiceId: params.request.invoiceId,
             boc: mockBoc
         });
 
-        console.log('[MockWallet] Payment confirmed for invoice:', params.invoiceId);
+        console.log('[MockWallet] Payment confirmed for invoice:', params.request.invoiceId);
     }
 
 
@@ -386,5 +314,19 @@ export class MockWallet implements InstantPayAPI {
         `;
         
         document.head.appendChild(style);
+    }
+
+    /**
+     * Compare two semver strings a and b.
+     * Returns -1 if a<b, 0 if a==b, 1 if a>b
+     */
+    private _compareSemver(a: `${number}.${number}.${number}`, b: `${number}.${number}.${number}`): number {
+        const pa = a.split('.').map((x) => parseInt(x, 10));
+        const pb = b.split('.').map((x) => parseInt(x, 10));
+        for (let i = 0; i < 3; i++) {
+            if (pa[i] < pb[i]) return -1;
+            if (pa[i] > pb[i]) return 1;
+        }
+        return 0;
     }
 }
