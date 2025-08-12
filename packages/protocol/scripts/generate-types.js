@@ -23,10 +23,8 @@ if (!fs.existsSync(OUTPUT_DIR)) {
 
 console.log('🔧 Generating TypeScript types from JSON schemas...');
 
-// Schema files to process
-const schemaFiles = fs
-  .readdirSync(SCHEMAS_DIR)
-  .filter(file => file.endsWith('.schema.json'));
+// Schema files to process (explicit order to avoid duplicate types)
+const schemaFiles = ['events.schema.json', 'pay-button-params.schema.json'];
 
 let generatedTypes = `/**
  * Generated TypeScript types from JSON schemas
@@ -53,6 +51,7 @@ try {
     
     // НАСТОЯЩАЯ генерация типов из JSON Schema
     const typescript = await compile(schema, schema.title || 'Generated', {
+      cwd: SCHEMAS_DIR,
       bannerComment: '',
       style: {
         singleQuote: true,

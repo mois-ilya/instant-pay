@@ -51,11 +51,15 @@ pnpm run clean
 
 ## 🎯 Protocol Overview
 
-InstantPay provides a minimal browser-level interface with exactly **three** public entry points:
+InstantPay injects a wallet‑provided object `window.tonkeeper.instantPay` that exposes the following surface:
 
--   `setPayButton()` - Render or update the Pay button
--   `hidePayButton()` - Remove the button and cancel active invoice
--   `events` - Event emitter for `click → sent/cancelled` flow
+-   `handshake(app, require?)` – синхронное рукопожатие без раскрытия адреса
+-   `setPayButton(params)` – отрисовать или заменить нативную кнопку оплаты
+-   `hidePayButton()` – скрыть кнопку (идемпотентно)
+-   `getActive()` – узнать активный счёт, если он есть
+-   `cancel(invoiceId?)` – отменить до клика
+-   `requestPayment()` – опциональный headless‑сценарий без кнопки
+-   `events` – эмиттер событий `ready`, `click`, `sent`, `cancelled`, `handoff`
 
 ## 🧪 Demo Features
 
