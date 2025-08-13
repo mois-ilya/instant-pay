@@ -1,4 +1,4 @@
-import { Component, Show } from 'solid-js';
+import { Component, Show, createSignal } from 'solid-js';
 import type { ScenarioConfig } from '../scenarios';
 
 // ScenarioConfig is imported from ../scenarios
@@ -12,6 +12,7 @@ interface DemoScenarioCardProps {
 }
 
 export const DemoScenarioCard: Component<DemoScenarioCardProps> = (props) => {
+  const [isExpanded, setIsExpanded] = createSignal(false);
   const s = () => props.scenario;
   const cls = () => `border rounded-none md:rounded-lg px-4 py-3 transition-colors ${props.isActive ? 'bg-blue-50 border-blue-300' : 'bg-white border-slate-200 hover:bg-slate-50'}`;
   const jettonMaster = () => {
@@ -41,7 +42,14 @@ export const DemoScenarioCard: Component<DemoScenarioCardProps> = (props) => {
         </div>
       </div>
       <div class="mt-1 text-xs text-slate-500 break-words">{s().description}</div>
-      <div class="mt-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+      <button
+        class="md:hidden mt-2 text-xs text-slate-700 underline"
+        aria-expanded={isExpanded()}
+        onClick={() => setIsExpanded((v) => !v)}
+      >
+        {isExpanded() ? 'Hide details' : 'Show details'}
+      </button>
+      <div class={`${isExpanded() ? 'grid' : 'hidden md:grid'} mt-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2`}>
         <div class="bg-slate-50 rounded px-2 py-1">
           <div class="text-[10px] text-slate-500">Amount</div>
           <div class="text-[11px] font-mono text-slate-700">{s().params.request.amount}</div>
