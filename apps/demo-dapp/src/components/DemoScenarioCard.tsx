@@ -89,7 +89,9 @@ export const DemoScenarioCard: Component<DemoScenarioCardProps> = (props) => {
           </div>
         </div>
       </div>
-      <div class="md:hidden mt-2 text-[11px] text-green-600 italic">{s().expectedOutcome}</div>
+      <Show when={isExpanded()}>
+        <div class="md:hidden mt-2 text-[11px] text-green-600 italic">{s().expectedOutcome}</div>
+      </Show>
     </div>
   );
 };
