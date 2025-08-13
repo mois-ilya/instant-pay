@@ -369,15 +369,21 @@ export class MockWallet implements InstantPayAPI {
             }
             /* Confirmation modal */
             .mock-wallet-confirm-backdrop { position: fixed; inset: 0; z-index: 1000000; background: rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; }
-            .mock-wallet-confirm-modal { background:#fff; color:#0f172a; border-radius:12px; width:min(620px,92vw); box-shadow:0 10px 30px rgba(0,0,0,0.2); padding:16px; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+            .mock-wallet-confirm-modal { background:#fff; color:#0f172a; border-radius:12px; width:min(620px,94vw); box-shadow:0 10px 30px rgba(0,0,0,0.2); padding:16px; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
             .mock-wallet-confirm-title { font-size:16px; font-weight:700; margin-bottom:12px; }
             .mock-wallet-confirm-content { display:grid; gap:8px; margin-bottom:12px; }
-            .mock-wallet-confirm-content .row { display:flex; align-items:center; gap:8px; }
-            .mock-wallet-confirm-content code { background:#f1f5f9; padding:2px 4px; border-radius:4px; }
+            .mock-wallet-confirm-content .row { display:grid; grid-template-columns: auto 1fr; align-items:start; column-gap:8px; }
+            .mock-wallet-confirm-content .row span { color:#475569; font-size:13px; }
+            .mock-wallet-confirm-content code { background:#f1f5f9; padding:2px 4px; border-radius:4px; display:block; max-width:100%; overflow-wrap:anywhere; word-break:break-word; white-space:normal; }
             .mock-wallet-confirm-actions { display:flex; gap:8px; margin-top:8px; }
             .mock-wallet-confirm-actions .approve { background:#10b981; color:#fff; border:0; border-radius:8px; padding:10px 14px; font-weight:600; cursor:pointer; }
             .mock-wallet-confirm-actions .cancel { background:#e2e8f0; color:#0f172a; border:0; border-radius:8px; padding:10px 14px; font-weight:600; cursor:pointer; }
             .mock-wallet-confirm-note { color:#64748b; font-size:12px; margin-top:8px; }
+            @media (max-width: 480px) {
+              .mock-wallet-confirm-modal { width:96vw; padding:14px; }
+              .mock-wallet-confirm-title { font-size:15px; }
+              .mock-wallet-confirm-content code { font-size:12px; }
+            }
             
             .mock-wallet-simple-container {
                 padding: 12px 16px;
