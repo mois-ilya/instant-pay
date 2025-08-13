@@ -20,7 +20,7 @@ export const defaultScenarios: ScenarioConfig[] = [
         amount: '0.1',
         recipient: DEMO_RECIPIENT,
         invoiceId: crypto.randomUUID(),
-        asset: { type: 'ton' },
+        asset: { type: 'ton', symbol: 'TON', decimals: 9 },
       },
       label: 'buy',
       instantPay: true
@@ -36,7 +36,7 @@ export const defaultScenarios: ScenarioConfig[] = [
         amount: '10',
         recipient: DEMO_RECIPIENT,
         invoiceId: crypto.randomUUID(),
-        asset: { type: 'jetton', master: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs' }
+        asset: { type: 'jetton', master: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs', symbol: 'USDT', decimals: 6 }
       },
       label: 'unlock',
       instantPay: true
@@ -52,7 +52,7 @@ export const defaultScenarios: ScenarioConfig[] = [
         amount: '9999',
         recipient: DEMO_RECIPIENT,
         invoiceId: crypto.randomUUID(),
-        asset: { type: 'ton' }
+        asset: { type: 'ton', symbol: 'TON', decimals: 9 }
       },
       label: 'buy',
       instantPay: true
@@ -68,7 +68,7 @@ export const defaultScenarios: ScenarioConfig[] = [
         amount: '0.1',
         recipient: DEMO_RECIPIENT,
         invoiceId: crypto.randomUUID(),
-        asset: { type: 'ton' }
+        asset: { type: 'ton', symbol: 'TON', decimals: 9 }
       },
       label: 'buy',
       instantPay: false
@@ -84,7 +84,7 @@ export const defaultScenarios: ScenarioConfig[] = [
         amount: '1',
         recipient: 'invalid-address',
         invoiceId: crypto.randomUUID(),
-        asset: { type: 'ton' }
+        asset: { type: 'ton', symbol: 'TON', decimals: 9 }
       },
       label: 'buy',
       instantPay: true
@@ -100,7 +100,7 @@ export const defaultScenarios: ScenarioConfig[] = [
         amount: '0.5',
         recipient: DEMO_RECIPIENT,
         invoiceId: crypto.randomUUID(),
-        asset: { type: 'ton' }
+        asset: { type: 'ton', symbol: 'TON', decimals: 9 }
       },
       label: 'try',
       instantPay: true

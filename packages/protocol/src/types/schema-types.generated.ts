@@ -5,97 +5,199 @@
  * This file is auto-generated from JSON schemas in the schemas/ directory.
  */
 
+// Generated from asset.schema.json
+/**
+ * Transferable asset used by InstantPay: native TON or a Jetton token. Includes display symbol and decimals for amount formatting.
+ */
+export type Asset =
+  | {
+      /**
+       * Asset type discriminator: native TON coin.
+       */
+      type: 'ton';
+      /**
+       * Short ticker symbol for the asset (e.g., 'TON').
+       */
+      symbol: string;
+      /**
+       * Number of fractional decimal places used for TON amounts (fixed to 9).
+       */
+      decimals: 9;
+    }
+  | {
+      /**
+       * Asset type discriminator: Jetton token.
+       */
+      type: 'jetton';
+      /**
+       * Jetton master contract address (workchain-friendly string).
+       */
+      master: string;
+      /**
+       * Short ticker symbol for the token (e.g., 'USDT').
+       */
+      symbol: string;
+      /**
+       * Number of fractional decimal places used for the token amounts.
+       */
+      decimals: number;
+    };
+
+// Generated from payment-request.schema.json
+/**
+ * dApp's request to perform a payment via InstantPay.
+ */
+export interface PaymentRequest {
+  /**
+   * Payment amount as a decimal string with up to 18 fractional digits.
+   */
+  amount: string;
+  /**
+   * Recipient address (workchain-friendly string).
+   */
+  recipient: string;
+  /**
+   * Unique payment identifier provided by the dApp.
+   */
+  invoiceId: string;
+  asset: Asset;
+  /**
+   * Optional ADNL address used for network-level features.
+   */
+  adnlAddress?: string;
+  /**
+   * Optional UNIX timestamp (seconds) after which the request expires.
+   */
+  expiresAt?: number;
+}
+
 // Generated from events.schema.json
+/**
+ * Union of events emitted by the wallet to the dApp during the InstantPay lifecycle.
+ */
 export type InstantPayEvent =
   | {
+      /**
+       * Wallet is ready and provides handshake info.
+       */
       type: 'ready';
       handshake: ReadyHandshake;
     }
   | {
+      /**
+       * Payment UI became visible to the user.
+       */
       type: 'show';
+      /**
+       * Related invoice identifier.
+       */
       invoiceId: string;
     }
   | {
+      /**
+       * User clicked the Pay button.
+       */
       type: 'click';
+      /**
+       * Related invoice identifier.
+       */
       invoiceId: string;
     }
   | {
+      /**
+       * Payment was sent; BOC is provided.
+       */
       type: 'sent';
+      /**
+       * Related invoice identifier.
+       */
       invoiceId: string;
+      /**
+       * Bag of Cells (serialized transaction).
+       */
       boc: string;
     }
   | {
+      /**
+       * Payment flow was cancelled.
+       */
       type: 'cancelled';
+      /**
+       * Related invoice identifier.
+       */
       invoiceId: string;
+      /**
+       * Optional cancellation reason.
+       */
       reason?: 'user' | 'app' | 'wallet' | 'replaced' | 'expired' | 'unsupported_env';
     }
   | {
+      /**
+       * Wallet hands off to an external scheme (deep link or web).
+       */
       type: 'handoff';
+      /**
+       * Related invoice identifier.
+       */
       invoiceId: string;
+      /**
+       * Target URL for the handoff.
+       */
       url: string;
+      /**
+       * Scheme used for the handoff.
+       */
       scheme: 'ton' | 'https';
     };
 
-export interface ReadyHandshake {
-  protocolVersion: string;
-  wallet: {
-    name: string;
-  };
-  capabilities?: {
-    instant: {
-      asset:
-        | {
-            type: 'ton';
-          }
-        | {
-            type: 'jetton';
-            master: string;
-          };
-      limit: string;
-    }[];
-  };
-}
-
 // Generated from handshake.schema.json
+/**
+ * Handshake payload returned by wallet when it is ready to serve InstantPay requests.
+ */
 export interface ReadyHandshake {
+  /**
+   * Semantic protocol version supported by the wallet (e.g., '1.0.0').
+   */
   protocolVersion: string;
+  /**
+   * Basic wallet identification information.
+   */
   wallet: {
+    /**
+     * Human-readable wallet name.
+     */
     name: string;
   };
+  /**
+   * Advertised capabilities that the wallet supports (non-normative).
+   */
   capabilities?: {
+    /**
+     * Instant payment capability presets supported by the wallet.
+     */
     instant: {
-      asset:
-        | {
-            type: 'ton';
-          }
-        | {
-            type: 'jetton';
-            master: string;
-          };
+      asset: Asset;
+      /**
+       * Per-operation amount limit in the same units as PaymentRequest.amount.
+       */
       limit: string;
     }[];
   };
 }
 
 // Generated from pay-button-params.schema.json
+/**
+ * Parameters for rendering a wallet-controlled Pay Button in the dApp UI.
+ */
 export interface PayButtonParams {
   request: PaymentRequest;
+  /**
+   * Short imperative label for the button.
+   */
   label: 'buy' | 'unlock' | 'use' | 'get' | 'open' | 'start' | 'retry' | 'show' | 'play' | 'try';
+  /**
+   * Hint for the wallet to enable InstantPay flow when possible.
+   */
   instantPay?: boolean;
-}
-export interface PaymentRequest {
-  amount: string;
-  recipient: string;
-  invoiceId: string;
-  asset:
-    | {
-        type: 'ton';
-      }
-    | {
-        type: 'jetton';
-        master: string;
-      };
-  adnlAddress?: string;
-  expiresAt?: number;
 }
 

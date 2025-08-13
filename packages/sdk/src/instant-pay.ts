@@ -183,9 +183,9 @@ export class InstantPaySDK {
     this.activeFallback = null;
   }
 
-  async requestPayment(request: PaymentRequest, opts?: { signal?: AbortSignal }): Promise<RequestPaymentResult> {
+  async requestPayment(request: PaymentRequest): Promise<RequestPaymentResult> {
     if (!this.api?.requestPayment) throw new Error('NOT_SUPPORTED');
-    return this.api.requestPayment(request, opts);
+    return this.api.requestPayment(request);
   }
 
   private _buildDeepLink(request: PaymentRequest): { url: string; scheme: 'ton' | 'https'; bin: string } {

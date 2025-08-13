@@ -24,7 +24,15 @@ if (!fs.existsSync(OUTPUT_DIR)) {
 console.log('🔧 Generating TypeScript types from JSON schemas...');
 
 // Schema files to process (explicit order to avoid duplicate types)
-const schemaFiles = ['events.schema.json', 'handshake.schema.json', 'pay-button-params.schema.json'];
+// Note: payment-request is referenced from pay-button-params to avoid duplicating the interface
+// Asset is compiled explicitly to expose a reusable Asset type
+const schemaFiles = [
+  'asset.schema.json',
+  'payment-request.schema.json',
+  'events.schema.json',
+  'handshake.schema.json',
+  'pay-button-params.schema.json'
+];
 
 let generatedTypes = `/**
  * Generated TypeScript types from JSON schemas
@@ -57,7 +65,9 @@ try {
         singleQuote: true,
         semi: true
       },
-      additionalProperties: false
+      additionalProperties: false,
+      // Critical: avoid re-declaring referenced types in each output to prevent duplicates when concatenating
+      declareExternallyReferenced: false
     });
     
     generatedTypes += `// Generated from ${schemaFile}\n`;

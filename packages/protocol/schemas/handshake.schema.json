@@ -1,48 +1,34 @@
 {
   "$id": "https://schemas.instantpay.dev/handshake.schema.json",
   "title": "ReadyHandshake",
+  "description": "Handshake payload returned by wallet when it is ready to serve InstantPay requests.",
   "type": "object",
   "required": ["protocolVersion", "wallet"],
   "properties": {
-    "protocolVersion": { "type": "string" },
+    "protocolVersion": { "type": "string", "description": "Semantic protocol version supported by the wallet (e.g., '1.0.0')." },
     "wallet": {
       "type": "object",
+      "description": "Basic wallet identification information.",
       "required": ["name"],
       "properties": {
-        "name": { "type": "string" }
+        "name": { "type": "string", "description": "Human-readable wallet name." }
       },
       "additionalProperties": false
     },
     "capabilities": {
       "type": "object",
+      "description": "Advertised capabilities that the wallet supports (non-normative).",
       "required": ["instant"],
       "properties": {
         "instant": {
           "type": "array",
+          "description": "Instant payment capability presets supported by the wallet.",
           "items": {
             "type": "object",
             "required": ["asset", "limit"],
             "properties": {
-              "asset": {
-                "oneOf": [
-                  {
-                    "type": "object",
-                    "required": ["type"],
-                    "properties": { "type": { "const": "ton" } },
-                    "additionalProperties": false
-                  },
-                  {
-                    "type": "object",
-                    "required": ["type", "master"],
-                    "properties": {
-                      "type": { "const": "jetton" },
-                      "master": { "type": "string", "minLength": 48, "maxLength": 66 }
-                    },
-                    "additionalProperties": false
-                  }
-                ]
-              },
-              "limit": { "type": "string", "pattern": "^[0-9]+(\\.[0-9]{1,18})?$" }
+              "asset": { "$ref": "asset.schema.json", "description": "Asset available for instant payments (TON or Jetton)." },
+              "limit": { "type": "string", "pattern": "^[0-9]+(\\.[0-9]{1,18})?$", "description": "Per-operation amount limit in the same units as PaymentRequest.amount." }
             },
             "additionalProperties": false
           }

@@ -2,6 +2,7 @@ import Ajv, { type ValidateFunction } from 'ajv';
 import addFormats from 'ajv-formats';
 import payButtonParamsSchema from '@tonkeeper/instantpay-protocol/schemas/pay-button-params.schema.json' assert { type: 'json' };
 import paymentRequestSchema from '@tonkeeper/instantpay-protocol/schemas/payment-request.schema.json' assert { type: 'json' };
+import assetSchema from '@tonkeeper/instantpay-protocol/schemas/asset.schema.json' assert { type: 'json' };
 
 export interface ValidationResult {
   valid: boolean;
@@ -15,6 +16,7 @@ function getAjv(): Ajv {
   if (!ajv) {
     ajv = new Ajv({ allErrors: true, strict: false });
     addFormats(ajv);
+    ajv.addSchema(assetSchema);
     ajv.addSchema(paymentRequestSchema);
   }
   return ajv;

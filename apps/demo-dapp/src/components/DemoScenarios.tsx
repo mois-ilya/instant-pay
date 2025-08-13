@@ -5,6 +5,7 @@ import type { ScenarioConfig } from '../scenarios';
 import { 
   InstantPay as InstantPay,
   PayButtonParams,
+  PaymentRequest,
   InstantPayInvalidParamsError
 } from '@tonkeeper/instantpay-sdk';
 import { WalletType } from '../App';
@@ -29,14 +30,32 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
   const allowedLabels: Array<PayButtonParams['label']> = ['buy','unlock','use','get','open','start','retry','show','play','try'];
   const [customPrefill, setCustomPrefill] = createSignal<DemoCustomPrefill>({
     amount: '0.1',
-    assetType: 'ton',
-    jettonMaster: '',
+    asset: {
+      type: 'ton',
+      symbol: 'TON',
+      decimals: 9
+    },
     recipient: DEMO_RECIPIENT,
     label: 'buy',
     instant: true,
     expiresMinutes: '',
     invoiceId: crypto.randomUUID()
   });
+  
+  // Available assets from wallet capabilities + predefined demo jetton
+  const availableAssets = () => {
+    const caps = props.instantPay?.handshake?.capabilities?.instant ?? [];
+    const fromWallet = caps.map((c) => c.asset);
+    const demoJetton: PaymentRequest['asset'] = {
+      type: 'jetton',
+      master: 'EQBR-4-x7dik6UIHSf_IE6y2i7LdPrt3dLtoilA8sObIquW8',
+      symbol: 'POSASYVAET',
+      decimals: 9
+    };
+
+    return [...fromWallet, demoJetton];
+  };
+
 
   // handled inside DemoCustomConfigurator via onSubmit
 
@@ -49,8 +68,7 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
     })();
     setCustomPrefill({
       amount: req.amount,
-      assetType: req.asset.type === 'ton' ? 'ton' : 'jetton',
-      jettonMaster: req.asset.type === 'jetton' ? req.asset.master : '',
+      asset: req.asset,
       recipient: req.recipient,
       label: scenario.params.label,
       instant: !!scenario.params.instantPay,
@@ -146,6 +164,7 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
       <DemoCustomConfigurator
         allowedLabels={allowedLabels}
         prefill={customPrefill()}
+        assets={availableAssets()}
         onSubmit={(params) => {
           try {
             props.instantPay?.setPayButton(params);

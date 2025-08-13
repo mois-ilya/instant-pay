@@ -32,8 +32,8 @@ export class MockWallet implements InstantPayAPI {
     /** Demo capabilities for instant payments (mock only) */
     private _capabilities = {
         instant: [
-            { asset: { type: 'ton' } as const, limit: '10' },
-            { asset: { type: 'jetton' as const, master: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs' }, limit: '1000' }
+            { asset: { type: 'ton', symbol: 'TON', decimals: 9 } as const, limit: '10' },
+            { asset: { type: 'jetton' as const, master: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs', symbol: 'USDT', decimals: 6 }, limit: '1000' }
         ]
     };
 
@@ -160,7 +160,7 @@ export class MockWallet implements InstantPayAPI {
      * Create simple button HTML for mobile dApp browsers
      */
     private _createSimpleButtonHTML(params: PayButtonParams): string {
-        const currency = params.request.asset.type === 'jetton' ? 'TOKEN' : 'TON';
+        const currency = params.request.asset.symbol ?? (params.request.asset.type === 'jetton' ? 'TOKEN' : 'TON');
             
         return `
             <div class="mock-wallet-simple-container">
@@ -286,7 +286,7 @@ export class MockWallet implements InstantPayAPI {
       try { this._confirmElement.remove(); } catch { /* noop */ }
       this._confirmElement = null;
     }
-    const currency = request.asset.type === 'jetton' ? 'TOKEN' : 'TON';
+    const currency = request.asset.symbol ?? (request.asset.type === 'jetton' ? 'TOKEN' : 'TON');
     const container = document.createElement('div');
     container.className = 'mock-wallet-confirm-backdrop';
     container.innerHTML = `

@@ -11,7 +11,7 @@ export const WalletStatus: Component<WalletStatusProps> = (props) => {
   const [detailsOpen, setDetailsOpen] = createSignal(false);
 
   type Capability = {
-    asset: { type: 'ton' } | { type: 'jetton'; master: string };
+    asset: ({ type: 'ton'; symbol: string; decimals: number } | { type: 'jetton'; master: string; symbol: string; decimals: number });
     limit: string;
   };
 
@@ -103,7 +103,7 @@ export const WalletStatus: Component<WalletStatusProps> = (props) => {
                       {(c: Capability) => (
                         <li class="flex items-center justify-between text-slate-700">
                           <span>
-                            {c.asset.type === 'ton' ? 'TON' : `JETTON ${c.asset.master.slice(0, 8)}…${c.asset.master.slice(-8)}`}
+                            {c.asset.symbol} {c.asset.type === 'jetton' ? `(${c.asset.master.slice(0, 8)}…${c.asset.master.slice(-8)})` : ''}
                           </span>
                           <span class="text-slate-500 text-xs">≤ {c.limit} per tx</span>
                         </li>

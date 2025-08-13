@@ -1,20 +1,16 @@
 {
   "$id": "https://schemas.instantpay.dev/payment-request.schema.json",
   "title": "PaymentRequest",
+  "description": "dApp's request to perform a payment via InstantPay.",
   "type": "object",
-  "required": ["amount","recipient","invoiceId","asset"],
+  "required": ["amount", "recipient", "invoiceId", "asset"],
   "properties": {
-    "amount": { "type": "string", "pattern": "^[0-9]+(\\.[0-9]{1,18})?$" },
-    "recipient": { "type": "string", "minLength": 48, "maxLength": 66 },
-    "invoiceId": { "type": "string", "format": "uuid" },
-    "asset": {
-      "oneOf": [
-        { "type": "object", "required": ["type"], "properties": { "type": { "const": "ton" } }, "additionalProperties": false },
-        { "type": "object", "required": ["type","master"], "properties": { "type": { "const": "jetton" }, "master": { "type": "string", "minLength": 48, "maxLength": 66 } }, "additionalProperties": false }
-      ]
-    },
-    "adnlAddress": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
-    "expiresAt": { "type": "integer", "minimum": 1 }
+    "amount": { "type": "string", "pattern": "^[0-9]+(\\.[0-9]{1,18})?$", "description": "Payment amount as a decimal string with up to 18 fractional digits." },
+    "recipient": { "type": "string", "minLength": 48, "maxLength": 66, "description": "Recipient address (workchain-friendly string)." },
+    "invoiceId": { "type": "string", "format": "uuid", "description": "Unique payment identifier provided by the dApp." },
+    "asset": { "$ref": "asset.schema.json", "description": "Asset to transfer (TON or specific Jetton)." },
+    "adnlAddress": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "Optional ADNL address used for network-level features." },
+    "expiresAt": { "type": "integer", "minimum": 1, "description": "Optional UNIX timestamp (seconds) after which the request expires." }
   },
   "additionalProperties": false
 }

@@ -1,15 +1,17 @@
 {
   "$id": "https://schemas.instantpay.dev/pay-button-params.schema.json",
   "title": "PayButtonParams",
+  "description": "Parameters for rendering a wallet-controlled Pay Button in the dApp UI.",
   "type": "object",
-  "required": ["request","label"],
+  "required": ["request", "label"],
   "properties": {
-    "request": { "$ref": "payment-request.schema.json" },
+    "request": { "$ref": "payment-request.schema.json", "description": "Payment request to associate with the button." },
     "label": {
       "type": "string",
-      "enum": ["buy","unlock","use","get","open","start","retry","show","play","try"]
+      "enum": ["buy", "unlock", "use", "get", "open", "start", "retry", "show", "play", "try"],
+      "description": "Short imperative label for the button."
     },
-    "instantPay": { "type": "boolean" }
+    "instantPay": { "type": "boolean", "description": "Hint for the wallet to enable InstantPay flow when possible." }
   },
   "additionalProperties": false
 }

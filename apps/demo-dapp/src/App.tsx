@@ -34,7 +34,7 @@ export const App: Component = () => {
             const a = document.getElementById('fallback') as HTMLAnchorElement | null;
             if (!a) return;
             const { label, request } = payButtonParams;
-            const currency = request.asset.type === 'jetton' ? 'TOKEN' : 'TON';
+            const currency = request.asset.symbol ?? (request.asset.type === 'jetton' ? 'TOKEN' : 'TON');
             const formatPayButtonText = (code: string, amount: string, curr: string): string => {
                 const map: Record<string, string> = {
                     buy: 'Buy',

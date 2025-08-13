@@ -1,10 +1,9 @@
-import { Component, For, Show, createEffect, createSignal } from 'solid-js';
-import type { PayButtonParams } from '@tonkeeper/instantpay-sdk';
+import { Component, For, createEffect, createSignal } from 'solid-js';
+import type { PayButtonParams, PaymentRequest } from '@tonkeeper/instantpay-sdk';
 
 export interface DemoCustomPrefill {
   amount?: string;
-  assetType?: 'ton' | 'jetton';
-  jettonMaster?: string;
+  asset?: PaymentRequest['asset'];
   recipient?: string;
   label?: PayButtonParams['label'];
   instant?: boolean;
@@ -15,13 +14,13 @@ export interface DemoCustomPrefill {
 interface DemoCustomConfiguratorProps {
   allowedLabels: Array<PayButtonParams['label']>;
   prefill?: DemoCustomPrefill;
+  assets: PaymentRequest['asset'][];
   onSubmit: (params: PayButtonParams) => void;
 }
 
 export const DemoCustomConfigurator: Component<DemoCustomConfiguratorProps> = (props) => {
   const [amount, setAmount] = createSignal<string>('0.1');
-  const [assetType, setAssetType] = createSignal<'ton' | 'jetton'>('ton');
-  const [jettonMaster, setJettonMaster] = createSignal<string>('');
+  const [selectedAssetKey, setSelectedAssetKey] = createSignal<string>('ton');
   const [recipient, setRecipient] = createSignal<string>('');
   const [label, setLabel] = createSignal<PayButtonParams['label']>('buy');
   const [instant, setInstant] = createSignal<boolean>(true);
@@ -32,8 +31,9 @@ export const DemoCustomConfigurator: Component<DemoCustomConfiguratorProps> = (p
     const p = props.prefill;
     if (!p) return;
     if (p.amount !== undefined) setAmount(p.amount);
-    if (p.assetType !== undefined) setAssetType(p.assetType);
-    if (p.jettonMaster !== undefined) setJettonMaster(p.jettonMaster);
+    // asset specifics come from provided assets list
+    const key = p.asset?.type === 'jetton' ? `jetton:${p.asset.master}` : 'ton';
+    setSelectedAssetKey(key);
     if (p.recipient !== undefined) setRecipient(p.recipient);
     if (p.label !== undefined) setLabel(p.label);
     if (p.instant !== undefined) setInstant(p.instant);
@@ -41,21 +41,25 @@ export const DemoCustomConfigurator: Component<DemoCustomConfiguratorProps> = (p
     if (p.invoiceId !== undefined) setInvoiceId(p.invoiceId);
   });
 
-  // Ensure Jetton Master cannot be entered when TON is selected
-  createEffect(() => {
-    if (assetType() === 'ton') {
-      setJettonMaster('');
-    }
-  });
+  // Asset selection (from provided list only)
+  const onSelectAsset = (key: string) => {
+    setSelectedAssetKey(key);
+  };
 
   const handleSubmit = () => {
     const nowSec = Math.floor(Date.now() / 1000);
     const exp = expiresMinutes().trim() ? (nowSec + Math.max(1, Math.floor(Number(expiresMinutes()) * 60))) : undefined;
+    const resolveAsset = (): PaymentRequest['asset'] => {
+      const list = props.assets;
+      const found = list.find(a => (a.type === 'ton' ? 'ton' : `jetton:${a.master}`) === selectedAssetKey());
+      if (found) return found;
+      return { type: 'ton', symbol: 'TON', decimals: 9 };
+    };
     const request: PayButtonParams['request'] = {
       amount: amount(),
       recipient: recipient(),
       invoiceId: invoiceId(),
-      asset: assetType() === 'ton' ? { type: 'ton' } : { type: 'jetton', master: jettonMaster() },
+      asset: resolveAsset(),
       ...(exp ? { expiresAt: exp } : {})
     };
     const params: PayButtonParams = { request, label: label(), instantPay: instant() };
@@ -72,25 +76,19 @@ export const DemoCustomConfigurator: Component<DemoCustomConfiguratorProps> = (p
           <label class="block text-[11px] text-slate-600 mb-1">Amount</label>
           <input value={amount()} onInput={(e) => setAmount(e.currentTarget.value)} class="w-full rounded border border-slate-300 px-2 py-1 text-sm" placeholder="0.1" />
         </div>
-        <div>
+        <div class="md:col-span-2 lg:col-span-1">
           <label class="block text-[11px] text-slate-600 mb-1">Asset</label>
-          <select value={assetType()} onChange={(e) => setAssetType(e.currentTarget.value as 'ton' | 'jetton')} class="w-full rounded border border-slate-300 px-2 py-1 text-sm">
-            <option value="ton">TON</option>
-            <option value="jetton">JETTON</option>
+          <select value={selectedAssetKey()} onChange={(e) => onSelectAsset(e.currentTarget.value)} class="w-full rounded border border-slate-300 px-2 py-1 text-sm">
+            <For each={props.assets}>
+              {(a) => {
+                const key = a.type === 'ton' ? 'ton' : `jetton:${a.master}`;
+                const label = a.type === 'ton' ? `${a.symbol}` : `${a.symbol} (${a.master.slice(0,6)}…${a.master.slice(-6)})`;
+                return <option value={key}>{label}</option>;
+              }}
+            </For>
           </select>
         </div>
-        <Show when={assetType() === 'jetton'}>
-          <div class="md:col-span-2 lg:col-span-1">
-            <label class="block text-[11px] text-slate-600 mb-1">Jetton Master</label>
-            <input value={jettonMaster()} onInput={(e) => setJettonMaster(e.currentTarget.value)} class="w-full rounded border border-slate-300 px-2 py-1 text-sm" placeholder="EQC…" />
-          </div>
-        </Show>
-        <Show when={assetType() === 'ton'}>
-          <div class="md:col-span-2 lg:col-span-1 opacity-50">
-            <label class="block text-[11px] text-slate-600 mb-1">Jetton Master</label>
-            <input value={''} disabled class="w-full rounded border border-slate-300 px-2 py-1 text-sm bg-slate-100" placeholder="N/A for TON" />
-          </div>
-        </Show>
+        {/* Jetton Master field removed */}
         <div class="md:col-span-2 lg:col-span-1">
           <label class="block text-[11px] text-slate-600 mb-1">Recipient</label>
           <input value={recipient()} onInput={(e) => setRecipient(e.currentTarget.value)} class="w-full rounded border border-slate-300 px-2 py-1 text-sm" placeholder="UQ…" />

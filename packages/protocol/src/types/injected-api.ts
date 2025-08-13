@@ -5,7 +5,7 @@
  * the auto-generated types from JSON Schemas.
  */
 
-import type { InstantPayEvent, PayButtonParams, PaymentRequest } from './schema-types.generated';
+import type { InstantPayEvent, PayButtonParams, PaymentRequest, ReadyHandshake } from './schema-types.generated';
 
 // Semver string, e.g. "1.0.0"
 export type InstantPaySemver = `${number}.${number}.${number}`;
@@ -18,13 +18,7 @@ export interface AppMeta {
 }
 
 // Optional wallet capability description (non-normative)
-export interface WalletCapabilities {
-  instant: Array<{
-    asset: { type: 'ton' } | { type: 'jetton'; master: string };
-    /** Per-operation limit in the same units as PaymentRequest.amount */
-    limit: string;
-  }>;
-}
+export type WalletCapabilities = NonNullable<ReadyHandshake['capabilities']>;
 
 // Handshake result from wallet to dApp
 export interface Handshake {
@@ -69,10 +63,7 @@ export interface InstantPayAPI {
   handshake(app: AppMeta, require?: { minProtocol?: InstantPaySemver }): Handshake;
   setPayButton(params: PayButtonParams): void;
   hidePayButton(): void;
-  requestPayment(
-    request: PaymentRequest,
-    opts?: { signal?: AbortSignal }
-  ): Promise<RequestPaymentResult>;
+  requestPayment(request: PaymentRequest): Promise<RequestPaymentResult>;
   getActive(): { invoiceId: string } | null;
   events: InstantPayEventEmitter;
 }

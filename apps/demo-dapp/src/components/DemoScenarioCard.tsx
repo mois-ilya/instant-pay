@@ -15,10 +15,6 @@ export const DemoScenarioCard: Component<DemoScenarioCardProps> = (props) => {
   const [isExpanded, setIsExpanded] = createSignal(false);
   const s = () => props.scenario;
   const cls = () => `border rounded-none md:rounded-lg px-4 py-3 transition-colors ${props.isActive ? 'bg-blue-50 border-blue-300' : 'bg-white border-slate-200 hover:bg-slate-50'}`;
-  const jettonMaster = () => {
-    const a = s().params.request.asset;
-    return a.type === 'jetton' ? a.master : null;
-  };
 
   return (
     <div class={cls()}>
@@ -56,14 +52,8 @@ export const DemoScenarioCard: Component<DemoScenarioCardProps> = (props) => {
         </div>
         <div class="bg-slate-50 rounded px-2 py-1">
           <div class="text-[10px] text-slate-500">Asset</div>
-          <div class="text-[11px] font-mono text-slate-700">{s().params.request.asset.type === 'ton' ? 'TON' : 'JETTON'}</div>
+          <div class="text-[11px] font-mono text-slate-700">{s().params.request.asset.symbol ?? (s().params.request.asset.type === 'jetton' ? 'TOKEN' : 'TON')}</div>
         </div>
-        <Show when={s().params.request.asset.type === 'jetton'}>
-          <div class="bg-slate-50 rounded px-2 py-1">
-            <div class="text-[10px] text-slate-500">Jetton Master</div>
-            <div class="text-[11px] font-mono text-slate-700">{jettonMaster() ? `${jettonMaster()!.slice(0,8)}…${jettonMaster()!.slice(-8)}` : ''}</div>
-          </div>
-        </Show>
         <div class="bg-slate-50 rounded px-2 py-1 md:col-span-2 lg:col-span-1">
           <div class="text-[10px] text-slate-500">Recipient</div>
           <div class="text-[11px] font-mono text-slate-700">{`${s().params.request.recipient.slice(0,8)}…${s().params.request.recipient.slice(-8)}`}</div>
