@@ -92,9 +92,9 @@ export class InstantPaySDK {
   hidePayButton(): void {
     // Hide custom UI first
     if (this.activeFallback) {
-      const prevId = this.activeFallback.request.invoiceId;
+      const prevReq = this.activeFallback.request;
       try { this.onFallbackHide?.(); } catch { /* noop */ }
-      this.events.emit({ type: 'cancelled', invoiceId: prevId, reason: 'app' });
+      this.events.emit({ type: 'cancelled', request: prevReq, reason: 'app' });
       this.activeFallback = null;
     } else {
       try { this.onFallbackHide?.(); } catch { /* noop */ }
@@ -137,11 +137,11 @@ export class InstantPaySDK {
         this._cancelActiveFallback('expired');
         return;
       }
-      this.events.emit({ type: 'click', invoiceId: params.request.invoiceId });
+      this.events.emit({ type: 'click', request: params.request });
 
       // Force HTTPS deeplink for compatibility; emit handoff, then try new tab
       const openUrl = scheme === 'https' ? url : url.replace(/^ton:\/\//, 'https://app.tonkeeper.com/');
-      this.events.emit({ type: 'handoff', invoiceId: params.request.invoiceId, url: openUrl, scheme: 'https' });
+      this.events.emit({ type: 'handoff', request: params.request, url: openUrl, scheme: 'https' });
       if (!opts?.noNavigate) {
         const win = window.open(openUrl, '_blank', 'noopener,noreferrer');
         if (!win) {
@@ -164,7 +164,7 @@ export class InstantPaySDK {
     };
 
     // Emit show and present fallback UI
-    this.events.emit({ type: 'show', invoiceId: params.request.invoiceId });
+    this.events.emit({ type: 'show', request: params.request });
     this.onFallbackShow?.({
       payButtonParams: params,
       deeplinkUrl: url,
@@ -177,9 +177,9 @@ export class InstantPaySDK {
 
   private _cancelActiveFallback(reason: CancelReason): void {
     if (!this.activeFallback) return;
-    const invoiceId = this.activeFallback.request.invoiceId;
+    const request = this.activeFallback.request;
     try { this.onFallbackHide?.(); } catch { /* noop */ }
-    this.events.emit({ type: 'cancelled', invoiceId, reason });
+    this.events.emit({ type: 'cancelled', request, reason });
     this.activeFallback = null;
   }
 

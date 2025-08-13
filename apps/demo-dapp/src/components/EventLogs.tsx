@@ -55,13 +55,13 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
       case 'ready':
         return event.handshake;
       case 'handoff':
-        return { invoiceId: event.invoiceId, url: event.url, scheme: event.scheme };
+        return { request: event.request, url: event.url, scheme: event.scheme };
       case 'sent':
-        return { invoiceId: event.invoiceId, boc: event.boc };
+        return { request: event.request, boc: event.boc };
       case 'click':
       case 'cancelled':
       case 'show':
-        return { invoiceId: event.invoiceId };
+        return { request: (event as Extract<InstantPayEvent, { type: 'click' | 'cancelled' | 'show' }>).request };
       default:
         return {} as never;
     }

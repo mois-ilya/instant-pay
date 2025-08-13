@@ -23,9 +23,7 @@ if (!fs.existsSync(OUTPUT_DIR)) {
 
 console.log('🔧 Generating TypeScript types from JSON schemas...');
 
-// Schema files to process (explicit order to avoid duplicate types)
-// Note: payment-request is referenced from pay-button-params to avoid duplicating the interface
-// Asset is compiled explicitly to expose a reusable Asset type
+// Schema files to process in a stable order
 const schemaFiles = [
   'asset.schema.json',
   'payment-request.schema.json',
@@ -46,37 +44,29 @@ let generatedTypes = `/**
 try {
   for (const schemaFile of schemaFiles) {
     const schemaPath = path.join(SCHEMAS_DIR, schemaFile);
-    
     if (!fs.existsSync(schemaPath)) {
       console.warn(`⚠️  Schema file not found: ${schemaFile}`);
       continue;
     }
-
     console.log(`   Processing: ${schemaFile}`);
-    
     const schemaContent = fs.readFileSync(schemaPath, 'utf8');
     const schema = JSON.parse(schemaContent);
-    
-    // НАСТОЯЩАЯ генерация типов из JSON Schema
-    const typescript = await compile(schema, schema.title || 'Generated', {
+    let typescript = await compile(schema, schema.title || 'Generated', {
       cwd: SCHEMAS_DIR,
       bannerComment: '',
-      style: {
-        singleQuote: true,
-        semi: true
-      },
+      style: { singleQuote: true, semi: true },
       additionalProperties: false,
-      // Critical: avoid re-declaring referenced types in each output to prevent duplicates when concatenating
+      // Keep referenced schemas local per file; we concatenate files below
       declareExternallyReferenced: false
     });
-    
-    generatedTypes += `// Generated from ${schemaFile}\n`;
-    generatedTypes += typescript;
-    generatedTypes += '\n';
+    // Ensure references to PaymentRequest within events reuse the canonical name
+    if (schemaFile === 'events.schema.json') {
+      typescript = typescript.replace(/PaymentRequest\d+/g, 'PaymentRequest');
+    }
+    generatedTypes += `// Generated from ${schemaFile}\n` + typescript + '\n';
   }
 
   fs.writeFileSync(OUTPUT_FILE, generatedTypes);
-  
   console.log(`✅ Generated types written to: ${path.relative(process.cwd(), OUTPUT_FILE)}`);
   console.log(`📊 Processed ${schemaFiles.length} schema files using json-schema-to-typescript`);
   

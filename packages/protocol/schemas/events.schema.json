@@ -14,34 +14,48 @@
     },
     {
       "type": "object",
-      "required": ["type","invoiceId"],
-      "properties": { "type": { "const": "show", "description": "Payment UI became visible to the user." }, "invoiceId": { "type": "string", "format": "uuid", "description": "Related invoice identifier." } },
+      "required": ["type","request"],
+      "properties": {
+        "type": { "const": "show", "description": "Payment UI became visible to the user." },
+        "request": { "$ref": "payment-request.schema.json", "description": "Full payment request associated with the event." }
+      },
       "additionalProperties": false
     },
     {
       "type": "object",
-      "required": ["type","invoiceId"],
-      "properties": { "type": { "const": "click", "description": "User clicked the Pay button." }, "invoiceId": { "type": "string", "format": "uuid", "description": "Related invoice identifier." } },
+      "required": ["type","request"],
+      "properties": {
+        "type": { "const": "click", "description": "User clicked the Pay button." },
+        "request": { "$ref": "payment-request.schema.json", "description": "Full payment request associated with the event." }
+      },
       "additionalProperties": false
     },
     {
       "type": "object",
-      "required": ["type","invoiceId","boc"],
-      "properties": { "type": { "const": "sent", "description": "Payment was sent; BOC is provided." }, "invoiceId": { "type": "string", "format": "uuid", "description": "Related invoice identifier." }, "boc": { "type": "string", "description": "Bag of Cells (serialized transaction)." } },
+      "required": ["type","request","boc"],
+      "properties": {
+        "type": { "const": "sent", "description": "Payment was sent; BOC is provided." },
+        "request": { "$ref": "payment-request.schema.json", "description": "Full payment request associated with the event." },
+        "boc": { "type": "string", "description": "Bag of Cells (serialized transaction)." }
+      },
       "additionalProperties": false
     },
     {
       "type": "object",
-      "required": ["type","invoiceId"],
-      "properties": { "type": { "const": "cancelled", "description": "Payment flow was cancelled." }, "invoiceId": { "type": "string", "format": "uuid", "description": "Related invoice identifier." }, "reason": { "type": "string", "enum": ["user","app","wallet","replaced","expired","unsupported_env"], "description": "Optional cancellation reason." } },
+      "required": ["type","request"],
+      "properties": {
+        "type": { "const": "cancelled", "description": "Payment flow was cancelled." },
+        "request": { "$ref": "payment-request.schema.json", "description": "Full payment request associated with the event." },
+        "reason": { "type": "string", "enum": ["user","app","wallet","replaced","expired","unsupported_env"], "description": "Optional cancellation reason." }
+      },
       "additionalProperties": false
     },
     {
       "type": "object",
-      "required": ["type","invoiceId","url","scheme"],
+      "required": ["type","request","url","scheme"],
       "properties": {
         "type": { "const": "handoff", "description": "Wallet hands off to an external scheme (deep link or web)." },
-        "invoiceId": { "type": "string", "format": "uuid", "description": "Related invoice identifier." },
+        "request": { "$ref": "payment-request.schema.json", "description": "Full payment request associated with the event." },
         "url": { "type": "string", "format": "uri", "description": "Target URL for the handoff." },
         "scheme": { "type": "string", "enum": ["ton","https"], "description": "Scheme used for the handoff." }
       },

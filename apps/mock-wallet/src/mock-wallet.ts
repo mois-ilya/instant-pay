@@ -52,12 +52,12 @@ export class MockWallet implements InstantPayAPI {
         const v = validatePayButtonParams(params);
         if (!v.valid) {
             // Hide current button if visible and emit cancelled for the active invoice
-            const activeId = this._current?.request.invoiceId;
+            const activeRequest = this._current?.request;
             this._hideOverlay();
             this._current = null;
             this._clicked = false;
-            if (activeId) {
-                this.events.emit({ type: 'cancelled', invoiceId: activeId, reason: 'wallet' });
+            if (activeRequest) {
+                this.events.emit({ type: 'cancelled', request: activeRequest, reason: 'wallet' });
             }
             throw new InstantPayInvalidParamsError(v.error);
         }
@@ -65,13 +65,13 @@ export class MockWallet implements InstantPayAPI {
 
         // Replacement semantics before click
         if (this._current && this._current.request.invoiceId !== params.request.invoiceId) {
-            this.events.emit({ type: 'cancelled', invoiceId: this._current.request.invoiceId, reason: 'replaced' });
+            this.events.emit({ type: 'cancelled', request: this._current.request, reason: 'replaced' });
         }
 
         this._current = params;
         this._showPayButtonOverlay(params);
         // Emit 'show' when button is rendered
-        const ev: InstantPayEvent = { type: 'show', invoiceId: params.request.invoiceId } as InstantPayEvent;
+        const ev: InstantPayEvent = { type: 'show', request: params.request } as InstantPayEvent;
         this.events.emit(ev);
     }
 
@@ -80,29 +80,29 @@ export class MockWallet implements InstantPayAPI {
      */
     hidePayButton(): void {
         if (this._current) {
-            const invoiceId = this._current.request.invoiceId;
+            const request = this._current.request;
             this._current = null;
             this._clicked = false;
             this._hideOverlay();
-            this.events.emit({ type: 'cancelled', invoiceId, reason: 'app' });
+            this.events.emit({ type: 'cancelled', request, reason: 'app' });
         } else {
             // Idempotent: still hide overlay if any
             this._hideOverlay();
         }
     }
 
-    getActive(): { invoiceId: string } | null {
-        return this._current ? { invoiceId: this._current.request.invoiceId } : null;
+    getActive(): { request: PaymentRequest } | null {
+        return this._current ? { request: this._current.request } : null;
     }
 
     cancel(invoiceId?: string): void {
         if (this._clicked) throw new Error('ACTIVE_OPERATION');
         if (!this._current) return;
         if (!invoiceId || invoiceId === this._current.request.invoiceId) {
-            const id = this._current.request.invoiceId;
+            const request = this._current.request;
             this._current = null;
             this._hideOverlay();
-            this.events.emit({ type: 'cancelled', invoiceId: id, reason: 'app' });
+            this.events.emit({ type: 'cancelled', request, reason: 'app' });
         }
     }
 
@@ -211,7 +211,7 @@ export class MockWallet implements InstantPayAPI {
                 // Emit click event
                 this.events.emit({
                     type: 'click',
-                    invoiceId: params.request.invoiceId
+                    request: params.request
                 });
                 
                 // Check expiry
@@ -220,7 +220,7 @@ export class MockWallet implements InstantPayAPI {
                     this._hideOverlay();
                     this._current = null;
                     this._clicked = false;
-                    this.events.emit({ type: 'cancelled', invoiceId: params.request.invoiceId, reason: 'expired' });
+                    this.events.emit({ type: 'cancelled', request: params.request, reason: 'expired' });
                     return;
                 }
 
@@ -250,7 +250,7 @@ export class MockWallet implements InstantPayAPI {
         // Emit sent event
         this.events.emit({
             type: 'sent',
-            invoiceId: params.request.invoiceId,
+            request: params.request,
             boc: mockBoc
         });
 
@@ -322,7 +322,7 @@ export class MockWallet implements InstantPayAPI {
         this._current = null;
         this._clicked = false;
         this._hideOverlay();
-        this.events.emit({ type: 'cancelled', invoiceId: request.invoiceId, reason: 'user' });
+        this.events.emit({ type: 'cancelled', request, reason: 'user' });
       }
     };
     container.addEventListener('click', onClick);

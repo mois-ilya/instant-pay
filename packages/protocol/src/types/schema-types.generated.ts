@@ -88,30 +88,21 @@ export type InstantPayEvent =
        * Payment UI became visible to the user.
        */
       type: 'show';
-      /**
-       * Related invoice identifier.
-       */
-      invoiceId: string;
+      request: PaymentRequest;
     }
   | {
       /**
        * User clicked the Pay button.
        */
       type: 'click';
-      /**
-       * Related invoice identifier.
-       */
-      invoiceId: string;
+      request: PaymentRequest;
     }
   | {
       /**
        * Payment was sent; BOC is provided.
        */
       type: 'sent';
-      /**
-       * Related invoice identifier.
-       */
-      invoiceId: string;
+      request: PaymentRequest;
       /**
        * Bag of Cells (serialized transaction).
        */
@@ -122,10 +113,7 @@ export type InstantPayEvent =
        * Payment flow was cancelled.
        */
       type: 'cancelled';
-      /**
-       * Related invoice identifier.
-       */
-      invoiceId: string;
+      request: PaymentRequest;
       /**
        * Optional cancellation reason.
        */
@@ -136,10 +124,7 @@ export type InstantPayEvent =
        * Wallet hands off to an external scheme (deep link or web).
        */
       type: 'handoff';
-      /**
-       * Related invoice identifier.
-       */
-      invoiceId: string;
+      request: PaymentRequest;
       /**
        * Target URL for the handoff.
        */

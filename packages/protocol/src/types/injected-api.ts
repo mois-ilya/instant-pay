@@ -64,7 +64,7 @@ export interface InstantPayAPI {
   setPayButton(params: PayButtonParams): void;
   hidePayButton(): void;
   requestPayment(request: PaymentRequest): Promise<RequestPaymentResult>;
-  getActive(): { invoiceId: string } | null;
+  getActive(): { request: PaymentRequest } | null;
   events: InstantPayEventEmitter;
 }
 
