@@ -1,0 +1,12 @@
+{
+  "$id": "index.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SchemasIndex",
+  "$defs": {
+    "Asset": { "$ref": "./asset.schema.json" },
+    "PaymentRequest": { "$ref": "./payment-request.schema.json" },
+    "InstantPayEvent": { "$ref": "./events.schema.json" },
+    "Handshake": { "$ref": "./handshake.schema.json" },
+    "PayButtonParams": { "$ref": "./pay-button-params.schema.json" }
+  }
+}
