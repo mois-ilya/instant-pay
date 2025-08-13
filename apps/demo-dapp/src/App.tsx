@@ -4,6 +4,7 @@ import { initMockWallet, isMockWalletActive } from 'mock-wallet';
 import { WalletStatus } from './components/WalletStatus';
 import { EventLogs } from './components/EventLogs';
 import { DemoScenarios } from './components/DemoScenarios';
+import { defaultScenarios } from './scenarios';
 
 // Declare global type
 declare global {
@@ -34,8 +35,28 @@ export const App: Component = () => {
             if (!a) return;
             const { label, request } = payButtonParams;
             const currency = request.asset.type === 'jetton' ? 'TOKEN' : 'TON';
-            const cap = label.charAt(0).toUpperCase() + label.slice(1);
-            a.textContent = `${cap} ${request.amount} ${currency}`;
+            const formatPayButtonText = (code: string, amount: string, curr: string): string => {
+                const map: Record<string, string> = {
+                    buy: 'Buy',
+                    continue: 'Continue',
+                    unlock: 'Unlock',
+                    use: 'Use',
+                    get: 'Get',
+                    open: 'Open',
+                    play: 'Play',
+                    start: 'Start',
+                    retry: 'Retry',
+                    'play again': 'Play again',
+                    play_again: 'Play again',
+                    'another try': 'Another try',
+                    next: 'Next',
+                    try: 'Try',
+                    show: 'Show'
+                };
+                const prefix = map[code] ?? (code.charAt(0).toUpperCase() + code.slice(1));
+                return `${prefix} for ${amount} ${curr}`;
+            };
+            a.textContent = formatPayButtonText(label as unknown as string, request.amount, currency);
             // ensure previous listeners (if any) are removed
             const prevSingle = (a as unknown as { _fallbackHandler?: (e: Event) => void })._fallbackHandler;
             if (prevSingle) a.removeEventListener('click', prevSingle);
@@ -86,6 +107,7 @@ export const App: Component = () => {
         } else {
             setWalletType('none');
         }
+
     });
 
     return (
@@ -122,7 +144,11 @@ export const App: Component = () => {
                 {/* Scenarios and Logs: scenarios first, then logs on mobile; side-by-side on desktop */}
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5 lg:min-h-[60vh]">
                     {/* Demo Scenarios */}
-                    <DemoScenarios instantPay={instantPay()} walletType={walletType()} />
+                    <DemoScenarios
+                        instantPay={instantPay()}
+                        walletType={walletType()}
+                        scenarios={defaultScenarios}
+                    />
 
                     {/* Event Logs */}
                     <div class="min-h-[360px] lg:h-auto">
@@ -138,7 +164,6 @@ export const App: Component = () => {
                                 <li>Watch the Event Logs panel for real-time feedback</li>
                                 <li>Try interacting with the Pay button when it appears</li>
                                 <li>Use "Hide Pay Button" to clear the current transaction</li>
-                                <li>Use "Cycle Through Labels" to see all available button labels</li>
                             </ol>
                         </div>
                     </div>

@@ -57,7 +57,7 @@ export interface InstantPayAPI {
   handshake(app: AppMeta, require?: { minProtocol?: InstantPaySemver }): Handshake;
   setPayButton(params: PayButtonParams): void;
   hidePayButton(): void;
-  requestPayment?(request: PaymentRequest, opts?: { signal?: AbortSignal }): Promise<RequestPaymentResult>;
+  requestPayment(request: PaymentRequest, opts?: { signal?: AbortSignal }): Promise<RequestPaymentResult>;
   getActive(): { invoiceId: string } | null;
   events: InstantPayEventEmitter;
 }

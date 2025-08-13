@@ -167,7 +167,28 @@ export class MockWallet implements InstantPayAPI {
         return `
             <div class="mock-wallet-simple-container">
                 <button class="mock-wallet-simple-btn" data-action="pay">
-                    ${params.label.charAt(0).toUpperCase() + params.label.slice(1)} ${params.request.amount} ${currency}
+                    ${(() => {
+                        const map: Record<string, string> = {
+                            buy: 'Buy',
+                            continue: 'Continue',
+                            unlock: 'Unlock',
+                            use: 'Use',
+                            get: 'Get',
+                            open: 'Open',
+                            play: 'Play',
+                            start: 'Start',
+                            retry: 'Retry',
+                            'play again': 'Play again',
+                            play_again: 'Play again',
+                            'another try': 'Another try',
+                            next: 'Next',
+                            try: 'Try',
+                            show: 'Show'
+                        };
+                        const code = String(params.label);
+                        const prefix = map[code] ?? (code.charAt(0).toUpperCase() + code.slice(1));
+                        return `${prefix} for ${params.request.amount} ${currency}`;
+                    })()}
                 </button>
             </div>
         `;

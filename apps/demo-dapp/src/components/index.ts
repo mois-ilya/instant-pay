@@ -7,3 +7,5 @@
 export { WalletStatus } from './WalletStatus';
 export { EventLogs } from './EventLogs';
 export { DemoScenarios } from './DemoScenarios';
+export { DemoCustomConfigurator } from './DemoCustomConfigurator';
+export { DemoScenarioCard } from './DemoScenarioCard';
