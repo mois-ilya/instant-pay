@@ -119,7 +119,7 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
   });
 
   return (
-    <div id="demo-scenarios" ref={el => { rootEl = el ?? undefined; }} class="bg-white rounded-xl p-5 shadow-sm">
+    <div id="demo-scenarios" ref={el => { rootEl = el ?? undefined; }} class="bg-white rounded-none md:rounded-xl p-5 shadow-sm">
       <div class="flex items-center justify-between mb-5">
         <h3 class="text-xl font-semibold text-slate-800">Demo Scenarios</h3>
         <button
@@ -132,7 +132,7 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
 
       {/* Error Display */}
       <Show when={error()}>
-        <div class="p-3 mb-5 bg-red-50 border border-red-200 rounded-lg text-red-800">
+        <div class="p-3 mb-5 bg-red-50 border border-red-200 rounded-lg lg:rounded-lg text-red-800">
           <div class="flex items-center gap-2 mb-1 justify-between">
             <strong>Error</strong>
             <span class="text-[11px] text-red-600 bg-red-100 px-1.5 py-0.5 rounded">

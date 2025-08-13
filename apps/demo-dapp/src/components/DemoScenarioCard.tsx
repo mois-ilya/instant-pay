@@ -13,7 +13,7 @@ interface DemoScenarioCardProps {
 
 export const DemoScenarioCard: Component<DemoScenarioCardProps> = (props) => {
   const s = () => props.scenario;
-  const cls = () => `border rounded-lg px-4 py-3 transition-colors ${props.isActive ? 'bg-blue-50 border-blue-300' : 'bg-white border-slate-200 hover:bg-slate-50'}`;
+  const cls = () => `border rounded-none md:rounded-lg px-4 py-3 transition-colors ${props.isActive ? 'bg-blue-50 border-blue-300' : 'bg-white border-slate-200 hover:bg-slate-50'}`;
   const jettonMaster = () => {
     const a = s().params.request.asset;
     return a.type === 'jetton' ? a.master : null;

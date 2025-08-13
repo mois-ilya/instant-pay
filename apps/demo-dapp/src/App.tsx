@@ -117,9 +117,9 @@ export const App: Component = () => {
                 <WalletStatus walletType={walletType()} handshake={instantPay()?.handshake} />
             </div>
 
-            <div class="max-w-6xl mx-auto p-5">
+            <div class="max-w-6xl mx-auto p-0 md:p-5">
                 {/* Header */}
-                <header class="text-center mb-6 p-5 bg-white rounded-xl shadow-sm">
+                    <header class="text-center mb-6 p-5 bg-white rounded-none md:rounded-xl shadow-sm">
                     <h1 class="text-3xl font-bold text-slate-800 mb-2">
                         InstantPay Demo dApp
                     </h1>
@@ -156,7 +156,7 @@ export const App: Component = () => {
                     </div>
 
                     {/* Instructions */}
-                    <div class="bg-white rounded-xl p-5 shadow-sm lg:col-span-2">
+                    <div class="bg-white rounded-none md:rounded-xl p-5 shadow-sm lg:col-span-2">
                         <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                             <h4 class="text-base font-semibold text-blue-900 mb-3">How to Use</h4>
                             <ol class="text-sm text-blue-800 space-y-1 list-decimal ml-4">
