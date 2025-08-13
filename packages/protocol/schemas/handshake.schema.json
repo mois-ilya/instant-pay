@@ -1,0 +1,56 @@
+{
+  "$id": "https://schemas.instantpay.dev/handshake.schema.json",
+  "title": "ReadyHandshake",
+  "type": "object",
+  "required": ["protocolVersion", "wallet"],
+  "properties": {
+    "protocolVersion": { "type": "string" },
+    "wallet": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "capabilities": {
+      "type": "object",
+      "required": ["instant"],
+      "properties": {
+        "instant": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["asset", "limit"],
+            "properties": {
+              "asset": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": ["type"],
+                    "properties": { "type": { "const": "ton" } },
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "required": ["type", "master"],
+                    "properties": {
+                      "type": { "const": "jetton" },
+                      "master": { "type": "string", "minLength": 48, "maxLength": 66 }
+                    },
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "limit": { "type": "string", "pattern": "^[0-9]+(\\.[0-9]{1,18})?$" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
+

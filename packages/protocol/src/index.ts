@@ -5,5 +5,5 @@
  * This file re-exports auto-generated types from schemas/ directory.
  */
 
-export * from './types/generated';
-export * from './types/api';
+export * from './types/schema-types.generated';
+export * from './types/injected-api';

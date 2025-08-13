@@ -1,11 +1,11 @@
 /**
- * Manual protocol types for InstantPay API surface
+ * Manual protocol types for InstantPay API surface (Injected Wallet API)
  *
  * These are stable, hand-written TypeScript types that complement
- * the auto-generated types in types/generated.ts.
+ * the auto-generated types from JSON Schemas.
  */
 
-import type { InstantPayEvent, PayButtonParams, PaymentRequest } from './generated';
+import type { InstantPayEvent, PayButtonParams, PaymentRequest } from './schema-types.generated';
 
 // Semver string, e.g. "1.0.0"
 export type InstantPaySemver = `${number}.${number}.${number}`;

@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename);
 
 const SCHEMAS_DIR = path.join(__dirname, '../schemas');
 const OUTPUT_DIR = path.join(__dirname, '../src/types');
-const OUTPUT_FILE = path.join(OUTPUT_DIR, 'generated.ts');
+const OUTPUT_FILE = path.join(OUTPUT_DIR, 'schema-types.generated.ts');
 
 // Ensure output directory exists
 if (!fs.existsSync(OUTPUT_DIR)) {
@@ -24,7 +24,7 @@ if (!fs.existsSync(OUTPUT_DIR)) {
 console.log('🔧 Generating TypeScript types from JSON schemas...');
 
 // Schema files to process (explicit order to avoid duplicate types)
-const schemaFiles = ['events.schema.json', 'pay-button-params.schema.json'];
+const schemaFiles = ['events.schema.json', 'handshake.schema.json', 'pay-button-params.schema.json'];
 
 let generatedTypes = `/**
  * Generated TypeScript types from JSON schemas

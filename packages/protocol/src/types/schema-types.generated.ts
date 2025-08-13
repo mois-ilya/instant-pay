@@ -9,12 +9,7 @@
 export type InstantPayEvent =
   | {
       type: 'ready';
-      handshake: {
-        protocolVersion: string;
-        wallet: {
-          name: string;
-        };
-      };
+      handshake: ReadyHandshake;
     }
   | {
       type: 'show';
@@ -40,6 +35,47 @@ export type InstantPayEvent =
       url: string;
       scheme: 'ton' | 'https';
     };
+
+export interface ReadyHandshake {
+  protocolVersion: string;
+  wallet: {
+    name: string;
+  };
+  capabilities?: {
+    instant: {
+      asset:
+        | {
+            type: 'ton';
+          }
+        | {
+            type: 'jetton';
+            master: string;
+          };
+      limit: string;
+    }[];
+  };
+}
+
+// Generated from handshake.schema.json
+export interface ReadyHandshake {
+  protocolVersion: string;
+  wallet: {
+    name: string;
+  };
+  capabilities?: {
+    instant: {
+      asset:
+        | {
+            type: 'ton';
+          }
+        | {
+            type: 'jetton';
+            master: string;
+          };
+      limit: string;
+    }[];
+  };
+}
 
 // Generated from pay-button-params.schema.json
 export interface PayButtonParams {

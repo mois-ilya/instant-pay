@@ -7,20 +7,7 @@
       "required": ["type","handshake"],
       "properties": {
         "type": { "const": "ready" },
-        "handshake": {
-          "type": "object",
-          "required": ["protocolVersion","wallet"],
-          "properties": {
-            "protocolVersion": { "type": "string" },
-            "wallet": {
-              "type": "object",
-              "required": ["name"],
-              "properties": { "name": { "type": "string" } },
-              "additionalProperties": false
-            }
-          },
-          "additionalProperties": false
-        }
+        "handshake": { "$ref": "handshake.schema.json" }
       },
       "additionalProperties": false
     },
