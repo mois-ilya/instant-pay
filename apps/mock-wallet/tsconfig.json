@@ -14,7 +14,6 @@
   "include": ["src/**/*"],
   "exclude": ["dist", "node_modules"],
   "references": [
-    {"path": "../../packages/protocol"},
-    {"path": "../../packages/sdk"}
+    {"path": "../../packages/protocol"}
   ]
 }

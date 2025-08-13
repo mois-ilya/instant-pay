@@ -18,4 +18,4 @@ export {
 } from './injection';
 
 // Types
-export type { InstantPayAPI } from '@tonkeeper/instantpay-sdk';
+export type { InstantPayAPI } from '@tonkeeper/instantpay-protocol';

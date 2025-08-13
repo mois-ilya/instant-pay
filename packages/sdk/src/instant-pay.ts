@@ -5,8 +5,14 @@
  */
 
 import { InstantPayEmitter } from './events';
-import type { InstantPayEventEmitter } from './events';
-import type { PayButtonParams, PaymentRequest } from '@tonkeeper/instantpay-protocol';
+import type {
+  PayButtonParams,
+  PaymentRequest,
+  InstantPayAPI,
+  Handshake,
+  CancelReason,
+  RequestPaymentResult
+} from '@tonkeeper/instantpay-protocol';
 import { validatePayButtonParams } from './validation';
 import { InstantPayInvalidParamsError } from './errors';
 import { beginCell } from '@ton/core';
@@ -21,46 +27,7 @@ if (!g.Buffer) {
   g.Buffer = Buffer;
 }
 
-// Types defined by the protocol (not exported from protocol package)
-export type InstantPaySemver = `${number}.${number}.${number}`;
-
-export interface AppMeta {
-  name: string;
-  url?: string;
-  iconUrl?: string;
-}
-
-export interface Handshake {
-  protocolVersion: InstantPaySemver;
-  wallet: { name: string };
-  capabilities: WalletCapabilities;
-}
-
-// Optional wallet capability description (non-normative, demo/useful extension)
-export interface WalletCapabilities {
-  instant: Array<{
-    asset: { type: 'ton' } | { type: 'jetton'; master: string };
-    limit: string;
-  }>;
-}
-
-export type CancelReason = 'user' | 'app' | 'wallet' | 'replaced' | 'expired' | 'unsupported_env';
-
-export type RequestPaymentResult =
-  | { status: 'sent'; boc: string }
-  | { status: 'cancelled'; reason?: CancelReason };
-
-// Use emitter interface from events.ts to keep consistent typing
-
-export interface InstantPayAPI {
-  readonly protocolVersion: InstantPaySemver;
-  handshake(app: AppMeta, require?: { minProtocol?: InstantPaySemver }): Handshake;
-  setPayButton(params: PayButtonParams): void;
-  hidePayButton(): void;
-  requestPayment(request: PaymentRequest, opts?: { signal?: AbortSignal }): Promise<RequestPaymentResult>;
-  getActive(): { invoiceId: string } | null;
-  events: InstantPayEventEmitter;
-}
+// All protocol-level types now live in @tonkeeper/instantpay-protocol
 
 // Global window typing
 declare global {

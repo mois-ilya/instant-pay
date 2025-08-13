@@ -2,12 +2,10 @@
  * Mock Wallet Implementation (InstantPay 1.0)
  */
 
-import { InstantPayEmitter } from '@tonkeeper/instantpay-sdk';
-import type { InstantPayAPI, Handshake } from '@tonkeeper/instantpay-sdk';
-import type { PayButtonParams, PaymentRequest } from '@tonkeeper/instantpay-protocol';
-import { validatePayButtonParams } from '@tonkeeper/instantpay-sdk';
-import { InstantPayInvalidParamsError } from '@tonkeeper/instantpay-sdk';
-import type { InstantPayEvent } from '@tonkeeper/instantpay-protocol';
+import { InstantPayEmitter } from './emitter';
+import type { InstantPayAPI, Handshake, PayButtonParams, PaymentRequest, InstantPayEvent } from '@tonkeeper/instantpay-protocol';
+import { validatePayButtonParams } from './validation';
+import { InstantPayInvalidParamsError } from './errors';
 
 // v1 mock has no extended runtime config
 

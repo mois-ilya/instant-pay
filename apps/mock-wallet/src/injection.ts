@@ -6,7 +6,7 @@
  */
 
 import { MockWallet } from './mock-wallet';
-import type { InstantPayAPI } from '@tonkeeper/instantpay-sdk';
+import type { InstantPayAPI } from '@tonkeeper/instantpay-protocol';
 
 declare global {
     interface Window {

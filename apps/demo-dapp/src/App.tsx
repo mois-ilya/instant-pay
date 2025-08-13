@@ -1,5 +1,5 @@
 import { Component, createMemo, createSignal, onMount } from 'solid-js';
-import { InstantPay as InstantPay, InstantPayAPI, InstantPayInitOptions } from '@tonkeeper/instantpay-sdk';
+import { InstantPay as InstantPay, InstantPayInitOptions, InstantPayAPI } from '@tonkeeper/instantpay-sdk';
 import { initMockWallet, isMockWalletActive } from 'mock-wallet';
 import { WalletStatus } from './components/WalletStatus';
 import { EventLogs } from './components/EventLogs';
