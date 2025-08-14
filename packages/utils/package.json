@@ -1,0 +1,28 @@
+{
+  "name": "@tonkeeper/instantpay-utils",
+  "version": "0.1.0",
+  "description": "Shared utilities for InstantPay: decimals conversion and protocol event emitter",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@tonkeeper/instantpay-protocol": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "tonkeeper",
+    "instant-pay",
+    "utils",
+    "ton"
+  ],
+  "license": "MIT"
+}

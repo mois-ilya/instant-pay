@@ -16,6 +16,7 @@
     "paths": {
       "@tonkeeper/instantpay-protocol": ["./packages/protocol/src"],
       "@tonkeeper/instantpay-sdk": ["./packages/sdk/src"],
+      "@tonkeeper/instantpay-utils": ["./packages/utils/src"],
       "mock-wallet": ["./apps/mock-wallet/src"],
       "demo-dapp": ["./apps/demo-dapp/src"]
     }
@@ -24,6 +25,7 @@
   "references": [
     {"path": "./packages/protocol"},
     {"path": "./packages/sdk"},
+    {"path": "./packages/utils"},
     {"path": "./apps/mock-wallet"}
   ]
 }
