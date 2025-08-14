@@ -13,6 +13,7 @@ export interface DemoCustomPrefill {
 
 interface DemoCustomConfiguratorProps {
   allowedLabels: Array<PayButtonParams['label']>;
+  defaultRecipient?: string;
   prefill?: DemoCustomPrefill;
   assets: PaymentRequest['asset'][];
   onSubmit: (params: PayButtonParams) => void;
@@ -21,7 +22,7 @@ interface DemoCustomConfiguratorProps {
 export const DemoCustomConfigurator: Component<DemoCustomConfiguratorProps> = (props) => {
   const [amount, setAmount] = createSignal<string>('0.1');
   const [selectedAssetKey, setSelectedAssetKey] = createSignal<string>('ton');
-  const [recipient, setRecipient] = createSignal<string>('');
+  const [recipient, setRecipient] = createSignal<string>(props.defaultRecipient ?? '');
   const [label, setLabel] = createSignal<PayButtonParams['label']>('buy');
   const [instant, setInstant] = createSignal<boolean>(true);
   const [expiresMinutes, setExpiresMinutes] = createSignal<string>('');
@@ -71,12 +72,12 @@ export const DemoCustomConfigurator: Component<DemoCustomConfiguratorProps> = (p
       <div class="flex items-center justify-between mb-3">
         <h4 class="text-sm font-semibold text-slate-800">Custom Payment</h4>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        <div>
+      <div class="grid grid-cols-12 gap-2">
+        <div class="col-span-12 md:col-span-6">
           <label class="block text-[11px] text-slate-600 mb-1">Amount</label>
           <input value={amount()} onInput={(e) => setAmount(e.currentTarget.value)} class="w-full rounded border border-slate-300 px-2 py-1 text-sm" placeholder="0.1" />
         </div>
-        <div class="md:col-span-2 lg:col-span-1">
+        <div class="col-span-12 md:col-span-6">
           <label class="block text-[11px] text-slate-600 mb-1">Asset</label>
           <select value={selectedAssetKey()} onChange={(e) => onSelectAsset(e.currentTarget.value)} class="w-full rounded border border-slate-300 px-2 py-1 text-sm">
             <For each={props.assets}>
@@ -89,28 +90,28 @@ export const DemoCustomConfigurator: Component<DemoCustomConfiguratorProps> = (p
           </select>
         </div>
         {/* Jetton Master field removed */}
-        <div class="md:col-span-2 lg:col-span-1">
+        <div class="col-span-12">
           <label class="block text-[11px] text-slate-600 mb-1">Recipient</label>
           <input value={recipient()} onInput={(e) => setRecipient(e.currentTarget.value)} class="w-full rounded border border-slate-300 px-2 py-1 text-sm" placeholder="UQ…" />
         </div>
-        <div>
+        <div class="col-span-12 md:col-span-4">
           <label class="block text-[11px] text-slate-600 mb-1">Label</label>
           <select value={label()} onChange={(e) => setLabel(e.currentTarget.value as PayButtonParams['label'])} class="w-full rounded border border-slate-300 px-2 py-1 text-sm">
             <For each={props.allowedLabels}>{(l) => <option value={l}>{l}</option>}</For>
           </select>
         </div>
-        <div>
+        <div class="col-span-12 md:col-span-4">
           <label class="block text-[11px] text-slate-600 mb-1">Instant Pay</label>
           <select value={String(instant())} onChange={(e) => setInstant(e.currentTarget.value === 'true')} class="w-full rounded border border-slate-300 px-2 py-1 text-sm">
             <option value="true">true</option>
             <option value="false">false</option>
           </select>
         </div>
-        <div>
+        <div class="col-span-12 md:col-span-4">
           <label class="block text-[11px] text-slate-600 mb-1">Expires in (minutes)</label>
           <input value={expiresMinutes()} onInput={(e) => setExpiresMinutes(e.currentTarget.value)} class="w-full rounded border border-slate-300 px-2 py-1 text-sm" placeholder="optional" />
         </div>
-        <div class="md:col-span-2 lg:col-span-2">
+        <div class="col-span-12">
           <div class="flex items-end gap-2">
             <div class="flex-1">
               <label class="block text-[11px] text-slate-600 mb-1">Invoice ID</label>

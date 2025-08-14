@@ -44,7 +44,7 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
   
   // Available assets from wallet capabilities + predefined demo jetton
   const availableAssets = () => {
-    const caps = props.instantPay?.handshake?.capabilities?.instant ?? [];
+    const caps = props.instantPay?.handshake?.capabilities?.instant?.limits ?? [];
     const fromWallet = caps.map((c) => c.asset);
     const demoJetton: PaymentRequest['asset'] = {
       type: 'jetton',
@@ -53,7 +53,13 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
       decimals: 9
     };
 
-    return [...fromWallet, demoJetton];
+    const demoTon: PaymentRequest['asset'] = {
+      type: 'ton',
+      symbol: 'TON',
+      decimals: 9
+    };
+
+    return Array.from(new Set([demoTon, ...fromWallet, demoJetton]));
   };
 
 
@@ -164,6 +170,7 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
       <DemoCustomConfigurator
         allowedLabels={allowedLabels}
         prefill={customPrefill()}
+        defaultRecipient={DEMO_RECIPIENT}
         assets={availableAssets()}
         onSubmit={(params) => {
           try {
