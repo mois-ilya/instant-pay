@@ -82,21 +82,6 @@ export type InstantPayEvent =
        * Optional cancellation reason.
        */
       reason?: 'user' | 'app' | 'wallet' | 'replaced' | 'expired' | 'unsupported_env';
-    }
-  | {
-      /**
-       * Wallet hands off to an external scheme (deep link or web).
-       */
-      type: 'handoff';
-      request: PaymentRequest;
-      /**
-       * Target URL for the handoff.
-       */
-      url: string;
-      /**
-       * Scheme used for the handoff.
-       */
-      scheme: 'ton' | 'https';
     };
 
 export interface SchemasIndex {

@@ -49,17 +49,6 @@
         "reason": { "type": "string", "enum": ["user","app","wallet","replaced","expired","unsupported_env"], "description": "Optional cancellation reason." }
       },
       "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "required": ["type","request","url","scheme"],
-      "properties": {
-        "type": { "const": "handoff", "description": "Wallet hands off to an external scheme (deep link or web)." },
-        "request": { "$ref": "payment-request.schema.json", "description": "Full payment request associated with the event." },
-        "url": { "type": "string", "format": "uri", "description": "Target URL for the handoff." },
-        "scheme": { "type": "string", "enum": ["ton","https"], "description": "Scheme used for the handoff." }
-      },
-      "additionalProperties": false
     }
   ]
 }

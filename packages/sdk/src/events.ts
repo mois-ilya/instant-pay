@@ -2,7 +2,7 @@
  * InstantPay Event Emitter
  * 
  * Type-safe event emitter for InstantPay protocol events.
- * Supports ready, click, sent, cancelled, handoff with proper TypeScript typing.
+ * Supports ready, click, sent, cancelled with proper TypeScript typing.
  */
 
 import type { InstantPayEvent, InstantPayEventEmitter } from '@tonkeeper/instantpay-protocol';

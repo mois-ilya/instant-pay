@@ -136,9 +136,8 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
     const offClick = ip.events.on('click', clear);
     const offSent = ip.events.on('sent', clear);
     const offCancelled = ip.events.on('cancelled', clear);
-    const offHandoff = ip.events.on('handoff', clear);
     return () => {
-      offReady(); offShow(); offClick(); offSent(); offCancelled(); offHandoff();
+      offReady(); offShow(); offClick(); offSent(); offCancelled();
     };
   });
 

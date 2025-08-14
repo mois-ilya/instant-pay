@@ -24,8 +24,7 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
         return '✅';
       case 'cancelled':
         return '❌';
-      case 'handoff':
-        return '🔗';
+      
       default:
         return '📝';
     }
@@ -43,8 +42,7 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
         return 'font-bold text-green-600 uppercase text-xs';
       case 'cancelled':
         return 'font-bold text-red-600 uppercase text-xs';
-      case 'handoff':
-        return 'font-bold text-amber-600 uppercase text-xs';
+      
       default:
         return 'font-bold text-slate-600 uppercase text-xs';
     }
@@ -54,8 +52,7 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
     switch (event.type) {
       case 'ready':
         return event.handshake;
-      case 'handoff':
-        return { request: event.request, url: event.url, scheme: event.scheme };
+      
       case 'sent':
         return { request: event.request, boc: event.boc };
       case 'click':
@@ -80,11 +77,6 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
     if (sdk) {
       const unsubs = setupEventListeners(sdk.events);
       cleanups = unsubs;
-      // If SDK already performed handshake before we subscribed, synthesize ready
-      if (sdk.handshake) {
-        const event = { type: 'ready', handshake: sdk.handshake } as InstantPayEvent;
-        setEvents(prev => [{ ...event, timestamp: Date.now() }, ...prev]);
-      }
     }
   });
 
@@ -99,7 +91,7 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
   const setupEventListeners = (events: InstantPayEmitter): Array<() => void> => {
     console.log('[EventLogs] Setting up listeners for events emitter:', events);
     // Listen to all InstantPay events
-    const eventTypes: InstantPayEvent['type'][] = ['ready', 'show', 'click', 'sent', 'cancelled', 'handoff'];
+    const eventTypes: InstantPayEvent['type'][] = ['ready', 'show', 'click', 'sent', 'cancelled'];
     
     const unsubs: Array<() => void> = [];
     eventTypes.forEach((eventType) => {
