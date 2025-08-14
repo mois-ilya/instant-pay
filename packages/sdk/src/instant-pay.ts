@@ -80,6 +80,7 @@ export class InstantPaySDK {
 
   get isInjected(): boolean { return !!this.hs; }
   get capabilities(): Handshake['capabilities'] | undefined { return this.hs?.capabilities; }
+  get handshake(): Handshake | undefined { return this.hs; }
 
   setPayButton(params: PayButtonParams): void {
     if (!this.provider) throw new Error('NOT_SUPPORTED');

@@ -15,9 +15,7 @@ export const WalletStatus: Component<WalletStatusProps> = (props) => {
     limit: string;
   };
 
-  const capabilities = createMemo<{ instant: Capability[] } | null>(() => {
-    return (props.handshake?.capabilities as { instant: Capability[] } | undefined) ?? null;
-  });
+  const capabilities = createMemo(() => props.handshake?.capabilities ?? null);
 
   const statusStyle = () => {
     switch (props.walletType) {
@@ -47,7 +45,7 @@ export const WalletStatus: Component<WalletStatusProps> = (props) => {
             <span class="inline-flex h-2.5 w-2.5 rounded-full bg-white/90"></span>
             <span class="font-semibold tracking-tight">{statusText()}</span>
             <Show when={props.handshake}>
-              <span class="text-white/80 text-sm">Protocol {props.handshake!.protocolVersion} · {props.handshake!.wallet.name}</span>
+              <span class="text-white/80 text-sm">Protocol {props.handshake!.protocolVersion}</span>
             </Show>
           </div>
 
@@ -87,19 +85,16 @@ export const WalletStatus: Component<WalletStatusProps> = (props) => {
             <div class="p-4 text-sm text-slate-700 space-y-2">
               <div><strong>Status:</strong> {statusText()}</div>
               <Show when={props.handshake}>
-                <>
-                  <div><strong>Protocol:</strong> {props.handshake!.protocolVersion}</div>
-                  <div><strong>Wallet:</strong> {props.handshake!.wallet.name}</div>
-                </>
+                <div><strong>Protocol:</strong> {props.handshake!.protocolVersion}</div>
               </Show>
               <Show when={!props.handshake}>
                 <div>No handshake available yet.</div>
               </Show>
               <div class="pt-2">
                 <h4 class="font-semibold mb-2">Instant assets</h4>
-                <Show when={capabilities()?.instant?.length} fallback={<div class="text-slate-500">Not provided by wallet</div>}>
+                <Show when={capabilities()?.instant?.limits.length} fallback={<div class="text-slate-500">Not provided by wallet</div>}>
                   <ul class="space-y-1">
-                    <For each={capabilities()!.instant}>
+                    <For each={capabilities()!.instant!.limits}>
                       {(c: Capability) => (
                         <li class="flex items-center justify-between text-slate-700">
                           <span>

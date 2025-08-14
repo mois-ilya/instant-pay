@@ -1,4 +1,4 @@
-import { Component, createMemo, createSignal, onMount } from 'solid-js';
+import { Component, createMemo, createSignal, onMount, onCleanup } from 'solid-js';
 import { InstantPay as InstantPay, InstantPayInitOptions, InstantPayAPI } from '@tonkeeper/instantpay-sdk';
 import { initMockWallet, isMockWalletActive } from 'mock-wallet';
 import { WalletStatus } from './components/WalletStatus';
@@ -20,6 +20,7 @@ export type WalletType = 'real' | 'mock' | 'none';
 export const App: Component = () => {
     const [walletType, setWalletType] = createSignal<WalletType>('none');
     const [instantPay, setInstantPay] = createSignal<InstantPay | null>(null);
+    
 
     const isMockWalletEnabled = createMemo(
         () => localStorage.getItem('mockWalletEnabled') === 'true'
@@ -30,83 +31,17 @@ export const App: Component = () => {
             initMockWallet();
         }
 
-        const instantPayInitOptions: InstantPayInitOptions = {onFallbackShow: ({ openDeeplink, payButtonParams, deeplinkUrl, deeplinkScheme }) => {
-            const a = document.getElementById('fallback') as HTMLAnchorElement | null;
-            if (!a) return;
-            const { label, request } = payButtonParams;
-            const currency = request.asset.symbol ?? (request.asset.type === 'jetton' ? 'TOKEN' : 'TON');
-            const formatPayButtonText = (code: string, amount: string, curr: string): string => {
-                const map: Record<string, string> = {
-                    buy: 'Buy',
-                    continue: 'Continue',
-                    unlock: 'Unlock',
-                    use: 'Use',
-                    get: 'Get',
-                    open: 'Open',
-                    play: 'Play',
-                    start: 'Start',
-                    retry: 'Retry',
-                    'play again': 'Play again',
-                    play_again: 'Play again',
-                    'another try': 'Another try',
-                    next: 'Next',
-                    try: 'Try',
-                    show: 'Show'
-                };
-                const prefix = map[code] ?? (code.charAt(0).toUpperCase() + code.slice(1));
-                return `${prefix} for ${amount} ${curr}`;
-            };
-            a.textContent = formatPayButtonText(label as unknown as string, request.amount, currency);
-            // ensure previous listeners (if any) are removed
-            const prevSingle = (a as unknown as { _fallbackHandler?: (e: Event) => void })._fallbackHandler;
-            if (prevSingle) a.removeEventListener('click', prevSingle);
-            const prevList = (a as unknown as { _fallbackHandlers?: Array<{ type: string; fn: (e: Event) => void }> })._fallbackHandlers;
-            if (prevList) { for (const { type, fn } of prevList) a.removeEventListener(type, fn as unknown as (e: Event) => void); }
-            // update href to actual deeplink
-            a.href = deeplinkScheme === 'https' ? deeplinkUrl : deeplinkUrl.replace(/^ton:\/\//, 'https://app.tonkeeper.com/');
-            a.target = '_blank';
-            a.rel = 'noopener noreferrer';
-            // attach multi-input listeners to ensure SDK captures click
-            let invoked = false;
-            const invoke = () => { if (invoked) return; invoked = true; openDeeplink({ noNavigate: true }); };
-            const onClick = (_e: Event) => { invoke(); };
-            const onAux = (e: MouseEvent) => { if (e.button === 1) invoke(); };
-            const onKey = (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') invoke(); };
-            a.addEventListener('click', onClick, { once: true });
-            a.addEventListener('auxclick', onAux as unknown as (e: Event) => void);
-            a.addEventListener('keydown', onKey as unknown as (e: Event) => void);
-            (a as unknown as { _fallbackHandlers?: Array<{ type: string; fn: (e: Event) => void }> })._fallbackHandlers = [
-                { type: 'click', fn: onClick as unknown as (e: Event) => void },
-                { type: 'auxclick', fn: onAux as unknown as (e: Event) => void },
-                { type: 'keydown', fn: onKey as unknown as (e: Event) => void },
-            ];
-            a.classList.remove('hidden');
-        },
-        onFallbackHide: () => {
-            const a = document.getElementById('fallback') as HTMLAnchorElement | null;
-            if (!a) return;
-            const prevSingle = (a as unknown as { _fallbackHandler?: (e: Event) => void })._fallbackHandler;
-            if (prevSingle) {
-                a.removeEventListener('click', prevSingle);
-                delete (a as unknown as { _fallbackHandler?: (e: Event) => void })._fallbackHandler;
-            }
-            const prevList = (a as unknown as { _fallbackHandlers?: Array<{ type: string; fn: (e: Event) => void }> })._fallbackHandlers;
-            if (prevList) {
-                for (const { type, fn } of prevList) a.removeEventListener(type, fn as unknown as (e: Event) => void);
-                delete (a as unknown as { _fallbackHandlers?: Array<{ type: string; fn: (e: Event) => void }> })._fallbackHandlers;
-            }
-            a.classList.add('hidden');
-        }};
+        const instantPayInitOptions: InstantPayInitOptions = {};
 
-        const _instantPay = new InstantPay(instantPayInitOptions);
-        setInstantPay(_instantPay);
-
-        // Determine wallet type based on actual injection state
-        if (_instantPay.isInjected) {
-            setWalletType(isMockWalletActive() ? 'mock' : 'real');
-        } else {
-            setWalletType('none');
-        }
+        // Defer SDK init so children can subscribe first
+        const initAfterMount = () => {
+            const ip = new InstantPay(instantPayInitOptions);
+            setInstantPay(ip);
+            // Set initial wallet type based on synchronous injection status
+            setWalletType(ip.isInjected ? (isMockWalletActive() ? 'mock' : 'real') : 'none');
+        };
+        const t = setTimeout(initAfterMount, 0);
+        onCleanup(() => clearTimeout(t));
 
     });
 
@@ -114,7 +49,7 @@ export const App: Component = () => {
         <div class="font-sans">
             {/* Full-width status bar */}
             <div class="w-full"> 
-                <WalletStatus walletType={walletType()} handshake={instantPay()?.handshake} />
+                <WalletStatus walletType={walletType()} handshake={instantPay()?.handshake}/>
             </div>
 
             <div class="max-w-6xl mx-auto p-0 md:p-5">

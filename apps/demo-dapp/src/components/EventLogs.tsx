@@ -1,6 +1,6 @@
 import { Component, Show, For, createSignal, createEffect, onCleanup } from 'solid-js';
 import { InstantPay, InstantPayEmitter } from '@tonkeeper/instantpay-sdk';
-import type { SDKEvent as InstantPayEvent } from '@tonkeeper/instantpay-sdk';
+import type { InstantPayEvent } from '@tonkeeper/instantpay-sdk';
 
 interface EventLogsProps {
   instantPay: InstantPay | null;
@@ -15,8 +15,6 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
 
   const getEventIcon = (type: InstantPayEvent['type']) => {
     switch (type) {
-      case 'inited':
-        return '🚦';
       case 'show':
         return '🟩';
       case 'click':
@@ -33,8 +31,6 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
 
   const getEventTypeClass = (type: InstantPayEvent['type']) => {
     switch (type) {
-      case 'inited':
-        return 'font-bold text-purple-600 uppercase text-xs';
       case 'show':
         return 'font-bold text-emerald-600 uppercase text-xs';
       case 'click':
@@ -51,8 +47,6 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
 
   const formatEventData = (event: InstantPayEvent) => {
     switch (event.type) {
-      case 'inited':
-        return 'handshake' in event ? event.handshake : { injected: event.injected };
       
       case 'sent':
         return { request: event.request, boc: event.boc };
@@ -78,11 +72,6 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
     if (sdk) {
       const unsubs = setupEventListeners(sdk.events);
       cleanups = unsubs;
-      // If SDK already initialized before we subscribed, synthesize an inited event
-      if (sdk.handshake) {
-        const event: InstantPayEvent = { type: 'inited', injected: true, handshake: sdk.handshake };
-        setEvents(prev => [{ ...event, timestamp: Date.now() }, ...prev]);
-      }
     }
   });
 
@@ -97,7 +86,7 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
   const setupEventListeners = (events: InstantPayEmitter): Array<() => void> => {
     console.log('[EventLogs] Setting up listeners for events emitter:', events);
     // Listen to all InstantPay events
-    const eventTypes: InstantPayEvent['type'][] = ['inited', 'show', 'click', 'sent', 'cancelled'];
+    const eventTypes: InstantPayEvent['type'][] = ['show', 'click', 'sent', 'cancelled'];
     
     const unsubs: Array<() => void> = [];
     eventTypes.forEach((eventType) => {
