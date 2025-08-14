@@ -188,7 +188,14 @@ export type CancelReason = 'user' | 'app' | 'wallet' | 'replaced' | 'expired' | 
 
 ```ts
 export type InstantPayEvent =
-  | { type: 'ready'; handshake: Handshake }                    // по завершении handshake
+| { type: 'show'; request: PaymentRequest }
+| { type: 'click'; request: PaymentRequest }
+| { type: 'sent'; request: PaymentRequest; boc: string }
+| { type: 'cancelled'; request: PaymentRequest; reason?: 'user' | 'app' | 'wallet' | 'replaced' | 'expired' | 'unsupported_env' }
+
+SDK-only events:
+
+- inited: `{ type: 'inited'; injected: boolean; handshake?: Handshake }`
   | { type: 'show'; invoiceId: string }                        // кнопка отрисована и готова к нажатию
   | { type: 'click'; invoiceId: string }                       // пользователь нажал кнопку
   | { type: 'sent'; invoiceId: string; boc: string }           // сообщение сформировано и отправлено

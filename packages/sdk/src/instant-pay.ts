@@ -4,7 +4,7 @@
  * - Delegates to provided fallbackApi when not injected
  */
 
-import { InstantPayEmitter } from './events';
+import { InstantPayEmitter, type SDKEvent } from './events';
 import type {
 	PayButtonParams,
 	PaymentRequest,
@@ -63,7 +63,7 @@ export class InstantPaySDK {
       };
       this.hs = injected.handshake({ name: this._detectAppName(), url: location.origin });
       this._forwardEvents(injected.events);
-      this.events.emit({ type: 'ready', handshake: this.hs });
+      this.events.emit({ type: 'inited', injected: true, handshake: this.hs } satisfies SDKEvent);
       return;
     }
 
@@ -71,6 +71,7 @@ export class InstantPaySDK {
     if (opts?.fallbackApi) {
       this.provider = opts.fallbackApi;
       this._forwardEvents(opts.fallbackApi.events);
+      this.events.emit({ type: 'inited', injected: false } satisfies SDKEvent);
       return;
     }
 

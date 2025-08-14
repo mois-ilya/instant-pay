@@ -42,13 +42,6 @@ export type Asset =
 export type InstantPayEvent =
   | {
       /**
-       * Wallet is ready and provides handshake info.
-       */
-      type: 'ready';
-      handshake: Handshake;
-    }
-  | {
-      /**
        * Payment UI became visible to the user.
        */
       type: 'show';

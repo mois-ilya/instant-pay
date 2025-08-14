@@ -1,17 +1,23 @@
 /**
  * InstantPay Event Emitter
  * 
- * Type-safe event emitter for InstantPay protocol events.
- * Supports ready, click, sent, cancelled with proper TypeScript typing.
+ * Type-safe event emitter for InstantPay events.
+ * Protocol-level: show, click, sent, cancelled.
+ * SDK-level: inited (SDK-only, not part of protocol schemas).
  */
 
-import type { InstantPayEvent, InstantPayEventEmitter } from '@tonkeeper/instantpay-protocol';
+import type { Handshake, InstantPayEvent as ProtocolEvent, InstantPayEventEmitter } from '@tonkeeper/instantpay-protocol';
+
+/**
+ * SDK-visible event union: protocol events + SDK-only 'inited'
+ */
+export type SDKEvent = ProtocolEvent | { type: 'inited'; injected: boolean; handshake?: Handshake };
 
 /**
  * Event listener function type
  */
-type EventListener<E extends InstantPayEvent['type']> = (
-  event: Extract<InstantPayEvent, { type: E }>
+type EventListener<E extends SDKEvent['type']> = (
+  event: Extract<SDKEvent, { type: E }>
 ) => void;
 
 /**
@@ -24,12 +30,12 @@ type UnsubscribeFn = () => void;
 /**
  * Type-safe event emitter for InstantPay events
  */
-type InternalListener = (event: InstantPayEvent) => void;
-type ListenerKey = (event: InstantPayEvent) => void;
+type InternalListener = (event: SDKEvent) => void;
+type ListenerKey = (event: SDKEvent) => void;
 
 export class InstantPayEmitter implements InstantPayEventEmitter {
   // Map event type -> (original listener -> wrapped listener)
-  private _listeners: Map<InstantPayEvent['type'], Map<ListenerKey, InternalListener>> = new Map();
+  private _listeners: Map<SDKEvent['type'], Map<ListenerKey, InternalListener>> = new Map();
 
   /**
    * Subscribe to events of a specific type
@@ -38,7 +44,7 @@ export class InstantPayEmitter implements InstantPayEventEmitter {
    * @param fn - Event listener function
    * @returns Unsubscribe function
    */
-  on<E extends InstantPayEvent['type']>(type: E, fn: EventListener<E>): UnsubscribeFn {
+  on<E extends SDKEvent['type']>(type: E, fn: EventListener<E>): UnsubscribeFn {
     let bucket = this._listeners.get(type);
     if (!bucket) {
       bucket = new Map();
@@ -47,7 +53,7 @@ export class InstantPayEmitter implements InstantPayEventEmitter {
 
     const wrapped: InternalListener = (event) => {
       // Safe due to discriminated union on 'type'
-      fn(event as Extract<InstantPayEvent, { type: E }>);
+      fn(event as Extract<SDKEvent, { type: E }>);
     };
     const key = fn as unknown as ListenerKey;
     bucket.set(key, wrapped);
@@ -60,7 +66,7 @@ export class InstantPayEmitter implements InstantPayEventEmitter {
    * @param type - Event type
    * @param fn - Event listener function to remove
    */
-  off<E extends InstantPayEvent['type']>(type: E, fn: EventListener<E>): void {
+  off<E extends SDKEvent['type']>(type: E, fn: EventListener<E>): void {
     const bucket = this._listeners.get(type);
     if (!bucket) return;
     const key = fn as unknown as ListenerKey;
@@ -73,7 +79,7 @@ export class InstantPayEmitter implements InstantPayEventEmitter {
   /**
    * Subscribe to a single event occurrence, then auto-unsubscribe
    */
-  once<E extends InstantPayEvent['type']>(type: E, fn: EventListener<E>): UnsubscribeFn {
+  once<E extends SDKEvent['type']>(type: E, fn: EventListener<E>): UnsubscribeFn {
     const onceWrapper: EventListener<E> = (event) => {
       try { fn(event); } finally { this.off(type, onceWrapper); }
     };
@@ -85,7 +91,7 @@ export class InstantPayEmitter implements InstantPayEventEmitter {
    * 
    * @param event - Event to emit
    */
-  emit(event: InstantPayEvent): void {
+  emit(event: SDKEvent): void {
     const bucket = this._listeners.get(event.type);
     if (!bucket) return;
     for (const wrapped of bucket.values()) {
@@ -107,7 +113,7 @@ export class InstantPayEmitter implements InstantPayEventEmitter {
   /**
    * Get the number of listeners for a specific event type
    */
-  listenerCount(type: InstantPayEvent['type']): number {
+  listenerCount(type: SDKEvent['type']): number {
     const bucket = this._listeners.get(type);
     return bucket ? bucket.size : 0;
   }
@@ -115,7 +121,7 @@ export class InstantPayEmitter implements InstantPayEventEmitter {
   /**
    * Get all event types that have listeners
    */
-  eventNames(): InstantPayEvent['type'][] {
+  eventNames(): SDKEvent['type'][] {
     return Array.from(this._listeners.keys());
   }
 }

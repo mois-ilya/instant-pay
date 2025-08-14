@@ -3,15 +3,7 @@
   "title": "InstantPayEvent",
   "description": "Union of events emitted by the wallet to the dApp during the InstantPay lifecycle.",
   "oneOf": [
-    {
-      "type": "object",
-      "required": ["type","handshake"],
-      "properties": {
-        "type": { "const": "ready", "description": "Wallet is ready and provides handshake info." },
-        "handshake": { "$ref": "handshake.schema.json", "description": "Handshake payload from the wallet." }
-      },
-      "additionalProperties": false
-    },
+    
     {
       "type": "object",
       "required": ["type","request"],
