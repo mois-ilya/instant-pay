@@ -89,9 +89,9 @@ export interface SchemasIndex {
  */
 export interface PaymentRequest {
   /**
-   * Payment amount as a decimal string with up to 18 fractional digits.
+   * Payment amount: either decimal string (uses asset.decimals) or bigint in base units (nanoton/minimal jetton unit).
    */
-  amount: string;
+  amount: string | bigint;
   /**
    * Recipient address (workchain-friendly string).
    */
@@ -135,14 +135,14 @@ export interface Handshake {
      */
     instant?: {
       /**
-       * Per-asset limits in the same units as PaymentRequest.amount. Empty array means instant is effectively unavailable.
+       * Per-asset limits in base units (nanoton for TON, minimal jetton unit). Empty array means instant is effectively unavailable.
        */
       limits: {
         asset: Asset;
         /**
-         * Per-operation amount limit in the same units as PaymentRequest.amount.
+         * Per-operation amount limit in base units (nanoton for TON, minimal jetton unit). When comparing with a decimal amount, convert using asset.decimals.
          */
-        limit: string;
+        limit: bigint;
       }[];
     };
   };

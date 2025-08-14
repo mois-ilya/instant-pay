@@ -23,13 +23,13 @@
           "properties": {
             "limits": {
               "type": "array",
-              "description": "Per-asset limits in the same units as PaymentRequest.amount. Empty array means instant is effectively unavailable.",
+              "description": "Per-asset limits in base units (nanoton for TON, minimal jetton unit). Empty array means instant is effectively unavailable.",
               "items": {
                 "type": "object",
                 "required": ["asset", "limit"],
                 "properties": {
                   "asset": { "$ref": "asset.schema.json", "description": "Asset available for instant payments (TON or Jetton)." },
-                  "limit": { "type": "string", "pattern": "^[0-9]+(\\.[0-9]{1,18})?$", "description": "Per-operation amount limit in the same units as PaymentRequest.amount." }
+                  "limit": { "type": "string", "pattern": "^[0-9]+$", "tsType": "bigint", "description": "Per-operation amount limit in base units (nanoton for TON, minimal jetton unit). When comparing with a decimal amount, convert using asset.decimals." }
                 },
                 "additionalProperties": false
               }

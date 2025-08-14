@@ -5,7 +5,13 @@
   "type": "object",
   "required": ["amount", "recipient", "invoiceId", "asset"],
   "properties": {
-    "amount": { "type": "string", "pattern": "^[0-9]+(\\.[0-9]{1,18})?$", "description": "Payment amount as a decimal string with up to 18 fractional digits." },
+    "amount": {
+      "anyOf": [
+        { "type": "string", "pattern": "^[0-9]+(\\.[0-9]{1,18})?$", "description": "Decimal string (human-readable). Compare using asset.decimals." },
+        { "type": "string", "pattern": "^[0-9]+$", "tsType": "bigint", "description": "Base units (nanoton for TON, minimal jetton unit)." }
+      ],
+      "description": "Payment amount: either decimal string (uses asset.decimals) or bigint in base units (nanoton/minimal jetton unit)."
+    },
     "recipient": { "type": "string", "minLength": 48, "maxLength": 66, "description": "Recipient address (workchain-friendly string)." },
     "invoiceId": { "type": "string", "format": "uuid", "description": "Unique payment identifier provided by the dApp." },
     "asset": { "$ref": "asset.schema.json", "description": "Asset to transfer (TON or specific Jetton)." },
