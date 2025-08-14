@@ -4,7 +4,8 @@
   "description": "Demo dApp showcasing InstantPay protocol integration",
   "private": true,
   "scripts": {
-    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "build": "pnpm run typecheck && vite build",
     "dev": "vite --host",
     "preview": "vite preview",
     "clean": "rm -rf dist"
