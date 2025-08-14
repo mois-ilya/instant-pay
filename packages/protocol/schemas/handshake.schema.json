@@ -1,37 +1,41 @@
 {
   "$id": "https://schemas.instantpay.dev/handshake.schema.json",
-  "title": "ReadyHandshake",
-  "description": "Handshake payload returned by wallet when it is ready to serve InstantPay requests.",
+  "title": "Handshake",
+  "description": "Provider capabilities configuration for InstantPay.",
   "type": "object",
-  "required": ["protocolVersion", "wallet"],
+  "required": ["protocolVersion", "capabilities"],
   "properties": {
-    "protocolVersion": { "type": "string", "description": "Semantic protocol version supported by the wallet (e.g., '1.0.0')." },
-    "wallet": {
-      "type": "object",
-      "description": "Basic wallet identification information.",
-      "required": ["name"],
-      "properties": {
-        "name": { "type": "string", "description": "Human-readable wallet name." }
-      },
-      "additionalProperties": false
+    "protocolVersion": {
+      "type": "string",
+      "description": "Semantic protocol version supported by the provider (e.g., '1.0.0')."
     },
     "capabilities": {
       "type": "object",
-      "description": "Advertised capabilities that the wallet supports (non-normative).",
-      "required": ["instant"],
+      "description": "Normative provider capabilities (always present, even if empty).",
+      "required": ["requestPayment", "getActive"],
       "properties": {
+        "requestPayment": { "type": "boolean", "description": "Supports programmatic payment flow without a button." },
+        "getActive": { "type": "boolean", "description": "Supports querying the status of an active operation." },
         "instant": {
-          "type": "array",
-          "description": "Instant payment capability presets supported by the wallet.",
-          "items": {
-            "type": "object",
-            "required": ["asset", "limit"],
-            "properties": {
-              "asset": { "$ref": "asset.schema.json", "description": "Asset available for instant payments (TON or Jetton)." },
-              "limit": { "type": "string", "pattern": "^[0-9]+(\\.[0-9]{1,18})?$", "description": "Per-operation amount limit in the same units as PaymentRequest.amount." }
-            },
-            "additionalProperties": false
-          }
+          "type": "object",
+          "description": "Instant Pay capability; if absent, Instant Pay is unavailable.",
+          "required": ["limits"],
+          "properties": {
+            "limits": {
+              "type": "array",
+              "description": "Per-asset limits in the same units as PaymentRequest.amount. Empty array means instant is effectively unavailable.",
+              "items": {
+                "type": "object",
+                "required": ["asset", "limit"],
+                "properties": {
+                  "asset": { "$ref": "asset.schema.json", "description": "Asset available for instant payments (TON or Jetton)." },
+                  "limit": { "type": "string", "pattern": "^[0-9]+(\\.[0-9]{1,18})?$", "description": "Per-operation amount limit in the same units as PaymentRequest.amount." }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false

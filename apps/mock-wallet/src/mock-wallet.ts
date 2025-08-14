@@ -29,13 +29,17 @@ export class MockWallet implements InstantPayAPI {
         this._injectStyles();
     }
 
-    /** Demo capabilities for instant payments (mock only) */
+    /** Demo capabilities for provider (mock only) */
     private _capabilities = {
-        instant: [
-            { asset: { type: 'ton', symbol: 'TON', decimals: 9 } as const, limit: '10' },
-            { asset: { type: 'jetton' as const, master: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs', symbol: 'USDT', decimals: 6 }, limit: '1000' }
-        ]
-    };
+        requestPayment: true,
+        getActive: true,
+        instant: {
+            limits: [
+                { asset: { type: 'ton', symbol: 'TON', decimals: 9 } as const, limit: '10' },
+                { asset: { type: 'jetton' as const, master: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs', symbol: 'USDT', decimals: 6 }, limit: '1000' }
+            ]
+        }
+    } as Handshake['capabilities'];
 
     handshake(_app: { name: string; url?: string; iconUrl?: string }, require?: { minProtocol?: `${number}.${number}.${number}` }): Handshake {
         if (require?.minProtocol && this._compareSemver(this.protocolVersion, require.minProtocol) < 0) {
@@ -43,7 +47,6 @@ export class MockWallet implements InstantPayAPI {
         }
         return {
             protocolVersion: this.protocolVersion,
-            wallet: { name: 'MockWallet' },
             capabilities: this._capabilities,
         };
     }
@@ -264,7 +267,7 @@ export class MockWallet implements InstantPayAPI {
     // Require params.instantPay flag
     if (!params.instantPay) return false;
     const { asset, amount } = params.request;
-    const caps = this._capabilities.instant;
+    const caps = this._capabilities.instant?.limits ?? [];
     let capLimitStr: string | null = null;
     for (const c of caps) {
       if (asset.type === 'ton' && c.asset.type === 'ton') { capLimitStr = c.limit; break; }

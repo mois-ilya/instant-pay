@@ -13,7 +13,7 @@ export { InstantPayEmitter } from './events';
 
 // Re-export all protocol types so users can import everything from SDK
 export * from '@tonkeeper/instantpay-protocol';
-export type { InstantPayInitOptions, FallbackContext } from './instant-pay';
+export type { InstantPayInitOptions } from './instant-pay';
 
 // Note: InstantPayEventEmitter type comes from protocol re-exports
 

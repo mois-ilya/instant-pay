@@ -45,7 +45,7 @@ export type InstantPayEvent =
        * Wallet is ready and provides handshake info.
        */
       type: 'ready';
-      handshake: ReadyHandshake;
+      handshake: Handshake;
     }
   | {
       /**
@@ -103,7 +103,7 @@ export interface SchemasIndex {
   Asset?: Asset;
   PaymentRequest?: PaymentRequest;
   InstantPayEvent?: InstantPayEvent;
-  Handshake?: ReadyHandshake;
+  Handshake?: Handshake;
   PayButtonParams?: PayButtonParams;
 }
 /**
@@ -133,36 +133,40 @@ export interface PaymentRequest {
   expiresAt?: number;
 }
 /**
- * Handshake payload returned by wallet when it is ready to serve InstantPay requests.
+ * Provider capabilities configuration for InstantPay.
  */
-export interface ReadyHandshake {
+export interface Handshake {
   /**
-   * Semantic protocol version supported by the wallet (e.g., '1.0.0').
+   * Semantic protocol version supported by the provider (e.g., '1.0.0').
    */
   protocolVersion: string;
   /**
-   * Basic wallet identification information.
+   * Normative provider capabilities (always present, even if empty).
    */
-  wallet: {
+  capabilities: {
     /**
-     * Human-readable wallet name.
+     * Supports programmatic payment flow without a button.
      */
-    name: string;
-  };
-  /**
-   * Advertised capabilities that the wallet supports (non-normative).
-   */
-  capabilities?: {
+    requestPayment: boolean;
     /**
-     * Instant payment capability presets supported by the wallet.
+     * Supports querying the status of an active operation.
      */
-    instant: {
-      asset: Asset;
+    getActive: boolean;
+    /**
+     * Instant Pay capability; if absent, Instant Pay is unavailable.
+     */
+    instant?: {
       /**
-       * Per-operation amount limit in the same units as PaymentRequest.amount.
+       * Per-asset limits in the same units as PaymentRequest.amount. Empty array means instant is effectively unavailable.
        */
-      limit: string;
-    }[];
+      limits: {
+        asset: Asset;
+        /**
+         * Per-operation amount limit in the same units as PaymentRequest.amount.
+         */
+        limit: string;
+      }[];
+    };
   };
 }
 /**

@@ -44,7 +44,7 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
   
   // Available assets from wallet capabilities + predefined demo jetton
   const availableAssets = () => {
-    const caps = props.instantPay?.handshake?.capabilities?.instant?.limits ?? [];
+    const caps = props.instantPay?.capabilities?.instant?.limits ?? [];
     const fromWallet = caps.map((c) => c.asset);
     const demoJetton: PaymentRequest['asset'] = {
       type: 'jetton',

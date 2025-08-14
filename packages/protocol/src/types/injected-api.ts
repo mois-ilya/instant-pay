@@ -5,7 +5,7 @@
  * the auto-generated types from JSON Schemas.
  */
 
-import type { InstantPayEvent, PayButtonParams, PaymentRequest, ReadyHandshake } from './schema-types.generated';
+import type { InstantPayEvent, PayButtonParams, PaymentRequest, Handshake, Asset } from './schema-types.generated';
 
 // Semver string, e.g. "1.0.0"
 export type InstantPaySemver = `${number}.${number}.${number}`;
@@ -17,16 +17,20 @@ export interface AppMeta {
   iconUrl?: string;
 }
 
-// Optional wallet capability description (non-normative)
-export type WalletCapabilities = NonNullable<ReadyHandshake['capabilities']>;
-
-// Handshake result from wallet to dApp
-export interface Handshake {
-  protocolVersion: InstantPaySemver;
-  wallet: { name: string };
-  /** Available capabilities (optional) */
-  capabilities?: WalletCapabilities;
+// Normative provider capabilities
+export interface ProviderCapabilities {
+  /** Supports programmatic flow without a button */
+  requestPayment: boolean;
+  /** Supports querying the status of an active operation */
+  getActive: boolean;
+  /** Instant Pay capability (if omitted — Instant Pay is unavailable) */
+  instant?: {
+    /** Per-asset limits in the same units as PaymentRequest.amount. Empty array equals unavailable. */
+    limits: Array<{ asset: Asset; limit: string }>;
+  };
 }
+
+// Handshake type is generated from JSON Schemas and imported above.
 
 export type CancelReason = 'user' | 'app' | 'wallet' | 'replaced' | 'expired' | 'unsupported_env';
 
