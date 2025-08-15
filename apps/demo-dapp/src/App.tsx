@@ -1,19 +1,12 @@
 import { Component, createMemo, createSignal, onMount, onCleanup } from 'solid-js';
-import { InstantPay as InstantPay, InstantPayInitOptions, InstantPayAPI } from '@tonkeeper/instantpay-sdk';
+import { InstantPay as InstantPay } from '@tonkeeper/instantpay-sdk';
 import { initMockWallet, isMockWalletActive } from 'mock-wallet';
 import { WalletStatus } from './components/WalletStatus';
 import { EventLogs } from './components/EventLogs';
 import { DemoScenarios } from './components/DemoScenarios';
 import { defaultScenarios } from './scenarios';
-
-// Declare global type
-declare global {
-    interface Window {
-        tonkeeper?: {
-            instantPay?: InstantPayAPI;
-        };
-    }
-}
+import { TonConnectUI } from '@tonconnect/ui';
+import { createTonConnectProvider } from '@tonkeeper/instantpay-tonconnect';
 
 export type WalletType = 'real' | 'mock' | 'none';
 
@@ -31,11 +24,39 @@ export const App: Component = () => {
             initMockWallet();
         }
 
-        const instantPayInitOptions: InstantPayInitOptions = {};
+        // Ensure a mount point exists for TonConnect provider button
+        let btnMount = document.querySelector('#tonconnect-pay-button');
+        if (!btnMount) {
+            const host = document.querySelector('#fallback')?.parentElement || document.body;
+            const div = document.createElement('div');
+            div.id = 'tonconnect-pay-button';
+            div.className = 'mb-3';
+            host?.prepend(div);
+        }
+
+        // TonConnect UI instance
+        const tonconnect = new TonConnectUI({ manifestUrl: `https://tkmessages.mois.pro/tonconnect-manifest.json`, buttonRootId: 'tonconnect-button' });
+
+        // Minimal resolver — can be replaced by backend/offline resolver
+        const resolveJettonWalletAddress = async (master: string, owner: string): Promise<string> => {
+            const url = new URL('https://tonapi.io/v2/jettons/wallets');
+            url.searchParams.set('jetton', master);
+            url.searchParams.set('owner', owner);
+            const res = await fetch(url.toString());
+            if (!res.ok) throw new Error('Failed to resolve jetton wallet');
+            const data = await res.json() as { wallet?: { address?: string }, wallets?: Array<{ address?: string }>, address?: string };
+            const candidate = data.wallet?.address || data.address || (Array.isArray(data.wallets) ? data.wallets[0]?.address : undefined) || '';
+            return candidate;
+        };
+
+        const fallbackProvider = createTonConnectProvider(tonconnect, resolveJettonWalletAddress, {
+            mount: '#tonconnect-pay-button',
+            className: 'w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-lg font-semibold text-sm transition-colors'
+        });
 
         // Defer SDK init so children can subscribe first
         const initAfterMount = () => {
-            const ip = new InstantPay(instantPayInitOptions);
+            const ip = new InstantPay(fallbackProvider);
             setInstantPay(ip);
             // Set initial wallet type based on synchronous injection status
             setWalletType(ip.isInjected ? (isMockWalletActive() ? 'mock' : 'real') : 'none');
@@ -74,6 +95,8 @@ export const App: Component = () => {
                     >
                         Open in Tonkeeper
                     </a>
+                    {/* Mount point for TonConnect provider button */}
+                    <div id="tonconnect-pay-button"/>
                 </div>
 
                 {/* Scenarios and Logs: scenarios first, then logs on mobile; side-by-side on desktop */}

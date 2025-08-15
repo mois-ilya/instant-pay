@@ -13,7 +13,7 @@
     "isolatedModules": true,
     "composite": true,
     "noEmit": true,
-    "outDir": "dist-ts",
+    "outDir": "dist",
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
 
@@ -27,6 +27,7 @@
   "references": [
     { "path": "../../packages/sdk" },
     { "path": "../../packages/protocol" },
+    { "path": "../../packages/tonconnect-provider" },
     { "path": "../mock-wallet" }
   ]
 }

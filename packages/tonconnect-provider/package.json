@@ -1,0 +1,33 @@
+{
+  "name": "@tonkeeper/instantpay-tonconnect",
+  "version": "0.1.0",
+  "description": "InstantPay provider implemented via TonConnect UI",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@ton/core": "^0.61.0",
+    "@tonconnect/ui": "^2.0.0",
+    "@tonkeeper/instantpay-protocol": "workspace:*",
+    "@tonkeeper/instantpay-utils": "workspace:*",
+    "@tonkeeper/instantpay-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "tonkeeper",
+    "instant-pay",
+    "tonconnect",
+    "ton",
+    "wallet"
+  ],
+  "license": "MIT"
+}

@@ -53,8 +53,11 @@ export const WalletStatus: Component<WalletStatusProps> = (props) => {
           <div class="flex items-center gap-2">
             <Show when={props.walletType === 'none'}>
               <span class="text-xs bg-white/15 px-2 py-1 rounded">
-                Fallback (deep link) will be used
+                Fallback (TonConnect) will be used
               </span>
+            </Show>
+            <Show when={props.walletType === 'none'}>
+              <div id="tonconnect-button"></div>
             </Show>
             <button
               class="text-xs px-3 py-1.5 rounded-md bg-white/15 hover:bg-white/25 transition-colors"

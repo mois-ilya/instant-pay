@@ -36,7 +36,7 @@ function getValidatePayButton(): ValidateFunction {
 export function validatePayButtonParams(params: unknown): ValidationResult {
   const validate = getValidatePayButton();
 
-  // Нормализуем bigint → string для JSON-schema в request.amount
+      // Normalize bigint → string for JSON-schema in request.amount
   let normalized: unknown = params;
 
   const req = (params as any)?.request;

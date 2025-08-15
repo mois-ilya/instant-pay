@@ -40,7 +40,7 @@ export class InstantPaySDK {
   private provider?: Omit<InstantPayProvider, 'events'>;
   private hs?: Handshake;
 
-  constructor(opts?: InstantPayInitOptions) {
+  constructor(fallbackProvider: InstantPayProvider) {
     this.events = new InstantPayEmitter();
 
     // 1) inject: simplest path + early exit
@@ -59,14 +59,8 @@ export class InstantPaySDK {
       return;
     }
 
-    // 2) fallbackApi: delegate and subscribe, without ready/handshake
-    if (opts?.fallbackApi) {
-      this.provider = opts.fallbackApi;
-      this._forwardEvents(opts.fallbackApi.events);
-      return;
-    }
-
-    // 3) nothing is available: SDK remains in NOT_SUPPORTED state until methods are called
+    this.provider = fallbackProvider;
+    this._forwardEvents(fallbackProvider.events);
   }
 
   get isInjected(): boolean { return !!this.hs; }
