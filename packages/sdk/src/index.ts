@@ -7,7 +7,7 @@ export { InstantPayEmitter } from '@tonkeeper/instantpay-utils';
 
 // Types (protocol)
 export * from '@tonkeeper/instantpay-protocol';
-export type { InstantPayInitOptions, InstantPayProvider } from './instant-pay';
+export type { InstantPayInitOptions } from './instant-pay';
 
 // Errors
 export { InstantPayInvalidParamsError, InstantPayConcurrentOperationError } from './errors';

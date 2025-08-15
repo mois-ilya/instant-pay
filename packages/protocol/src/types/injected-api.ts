@@ -62,13 +62,20 @@ export interface InstantPayEventEmitter {
 /**
  * Wallet-injected API surface available at window.tonkeeper.instantPay
  */
-export interface InstantPayAPI {
+export interface InstantPayAPI extends InstantPayProvider {
   readonly protocolVersion: InstantPaySemver;
   handshake(app: AppMeta, require?: { minProtocol?: InstantPaySemver }): Handshake;
-  setPayButton(params: PayButtonParams): void;
-  hidePayButton(): void;
-  requestPayment(request: PaymentRequest): Promise<RequestPaymentResult>;
-  getActive(): { request: PaymentRequest } | null;
+}
+
+/**
+ * Provider interface used by SDK adapters (e.g., TonConnect provider)
+ * so adapters depend only on Protocol types, not on SDK internals.
+ */
+export interface InstantPayProvider {
+  setPayButton: (params: PayButtonParams) => void;
+  hidePayButton: () => void;
+  requestPayment: (request: PaymentRequest) => Promise<RequestPaymentResult>;
+  getActive: () => { request: PaymentRequest } | null;
   events: InstantPayEventEmitter;
 }
 

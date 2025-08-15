@@ -10,9 +10,10 @@ import type {
 	PaymentRequest,
 	InstantPayAPI,
 	Handshake,
-	RequestPaymentResult
+	RequestPaymentResult,
+	InstantPayProvider,
+	InstantPayEventEmitter
 } from '@tonkeeper/instantpay-protocol';
-import type { InstantPayEventEmitter } from '@tonkeeper/instantpay-protocol';
 // No legacy deeplink fallback logic in SDK
 
 // No global Buffer polyfill required here
@@ -32,14 +33,6 @@ export interface InstantPayInitOptions {
 	 */
 	fallbackApi?: InstantPayProvider;
 }
-
-export type InstantPayProvider = {
-	setPayButton: InstantPayAPI['setPayButton'];
-	hidePayButton: InstantPayAPI['hidePayButton'];
-	requestPayment: InstantPayAPI['requestPayment'];
-	getActive: InstantPayAPI['getActive'];
-	events: InstantPayEventEmitter;
-};
 
 const FORWARDED_EVENTS = ['show', 'click', 'sent', 'cancelled'] as const;
 export class InstantPaySDK {
