@@ -4,6 +4,7 @@ import { initMockWallet, isMockWalletActive } from 'mock-wallet';
 import { WalletStatus } from './components/WalletStatus';
 import { EventLogs } from './components/EventLogs';
 import { DemoScenarios } from './components/DemoScenarios';
+import { TransactionTracking } from './components/TransactionTracking';
 import { defaultScenarios } from './scenarios';
 import { TonConnectUI } from '@tonconnect/ui';
 import { createTonConnectProvider } from '@tonkeeper/instantpay-tonconnect';
@@ -13,6 +14,7 @@ export type WalletType = 'real' | 'mock' | 'none';
 export const App: Component = () => {
     const [walletType, setWalletType] = createSignal<WalletType>('none');
     const [instantPay, setInstantPay] = createSignal<InstantPay | null>(null);
+    const [trackingBoc, setTrackingBoc] = createSignal<string | null>(null);
     
 
     const isMockWalletEnabled = createMemo(
@@ -60,6 +62,23 @@ export const App: Component = () => {
             setInstantPay(ip);
             // Set initial wallet type based on synchronous injection status
             setWalletType(ip.isInjected ? (isMockWalletActive() ? 'mock' : 'real') : 'none');
+            
+            // Listen for 'sent' events to start transaction tracking
+            const unsubSent = ip.events.on('sent', (event) => {
+                if (event.boc) {
+                    setTrackingBoc(event.boc);
+                }
+            });
+            
+            // Listen for 'cancelled' events to reset tracking
+            const unsubCancelled = ip.events.on('cancelled', () => {
+                setTrackingBoc(null);
+            });
+            
+            onCleanup(() => {
+                unsubSent();
+                unsubCancelled();
+            });
         };
         const t = setTimeout(initAfterMount, 0);
         onCleanup(() => clearTimeout(t));
@@ -99,6 +118,9 @@ export const App: Component = () => {
                     <div id="tonconnect-pay-button"/>
                 </div>
 
+                {/* Transaction Tracking */}
+                <TransactionTracking boc={trackingBoc()} />
+
                 {/* Scenarios and Logs: scenarios first, then logs on mobile; side-by-side on desktop */}
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5 lg:min-h-[60vh]">
                     {/* Demo Scenarios */}
@@ -121,6 +143,7 @@ export const App: Component = () => {
                                 <li>Click "Run Scenario" to test different InstantPay features</li>
                                 <li>Watch the Event Logs panel for real-time feedback</li>
                                 <li>Try interacting with the Pay button when it appears</li>
+                                <li>After sending a transaction, watch the Transaction Tracking panel</li>
                                 <li>Use "Hide Pay Button" to clear the current transaction</li>
                             </ol>
                         </div>

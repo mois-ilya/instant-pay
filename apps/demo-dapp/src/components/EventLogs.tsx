@@ -47,7 +47,6 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
 
   const formatEventData = (event: InstantPayEvent) => {
     switch (event.type) {
-      
       case 'sent':
         return { request: event.request, boc: event.boc };
       case 'click':

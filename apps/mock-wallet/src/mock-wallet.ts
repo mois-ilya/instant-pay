@@ -37,8 +37,8 @@ export class MockWallet implements InstantPayAPI {
         getActive: true,
         instant: {
             limits: [
-                { asset: { type: 'ton', symbol: 'TON', decimals: 9 }, limit: 10n },
-                { asset: { type: 'jetton', master: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs', symbol: 'USDT', decimals: 6 }, limit: 1000n }
+                { asset: { type: 'ton', symbol: 'TON', decimals: 9 }, limit: 10000000000n },
+                { asset: { type: 'jetton', master: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs', symbol: 'USDT', decimals: 6 }, limit: 100000000n }
             ]
         }
     };
@@ -190,10 +190,13 @@ export class MockWallet implements InstantPayAPI {
         const d = params.request.asset.decimals;
         const shown = typeof a === 'bigint' ? toDecimals(a, d) : a;
 
+        // Add lightning emoji if instant payment is supported
+        const lightningEmoji = this._isInstantSupported(params) ? '⚡ ' : '';
+
         return `
             <div class="mock-wallet-simple-container">
                 <button class="mock-wallet-simple-btn" data-action="pay">
-                    ${prefix} for ${shown} ${currency}
+                    ${lightningEmoji}${prefix} for ${shown} ${currency}
                 </button>
             </div>
         `;
