@@ -13,6 +13,7 @@
   "dependencies": {
     "@ton/core": "^0.61.0",
     "@tonkeeper/instantpay-protocol": "workspace:*",
+    "@tonkeeper/instantpay-utils": "workspace:*",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "buffer": "^6.0.3"

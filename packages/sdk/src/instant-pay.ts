@@ -33,7 +33,7 @@ export interface InstantPayInitOptions {
 	fallbackApi?: InstantPayProvider;
 }
 
-type InstantPayProvider = {
+export type InstantPayProvider = {
 	setPayButton: InstantPayAPI['setPayButton'];
 	hidePayButton: InstantPayAPI['hidePayButton'];
 	requestPayment: InstantPayAPI['requestPayment'];

@@ -35,7 +35,22 @@ function getValidatePayButton(): ValidateFunction {
 
 export function validatePayButtonParams(params: unknown): ValidationResult {
   const validate = getValidatePayButton();
-  const ok = validate(params);
+
+  // Нормализуем bigint → string для JSON-schema в request.amount
+  let normalized: unknown = params;
+
+  const req = (params as any)?.request;
+  if (req && typeof req === 'object') {
+    const amount = (req as any).amount;
+    if (typeof amount === 'bigint') {
+      normalized = {
+        ...(params as any),
+        request: { ...(req as any), amount: amount.toString() },
+      };
+    }
+  }
+
+  const ok = validate(normalized);
   if (!ok) {
     const msg = validate.errors?.[0]?.message || 'INVALID_PARAMS';
     return { valid: false, error: `INVALID_PARAMS: ${msg}` };

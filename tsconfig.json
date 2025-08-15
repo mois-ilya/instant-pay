@@ -26,6 +26,7 @@
     {"path": "./packages/protocol"},
     {"path": "./packages/sdk"},
     {"path": "./packages/utils"},
+    {"path": "./packages/tonconnect-provider"},
     {"path": "./apps/mock-wallet"}
   ]
 }

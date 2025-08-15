@@ -15,11 +15,14 @@ export type { SDKEvent } from './events';
 // Re-export all protocol types so users can import everything from SDK
 export * from '@tonkeeper/instantpay-protocol';
 export type { InstantPayInitOptions } from './instant-pay';
+export type { InstantPayProvider } from './instant-pay';
 
 // Note: InstantPayEventEmitter type comes from protocol re-exports
 
 // Error exports
 export { InstantPayInvalidParamsError } from './errors';
+export { InstantPayConcurrentOperationError } from './errors';
 
 // Validation exports
 export { validatePayButtonParams } from './validation';
+export { fromDecimals, toDecimals } from '@tonkeeper/instantpay-utils';
