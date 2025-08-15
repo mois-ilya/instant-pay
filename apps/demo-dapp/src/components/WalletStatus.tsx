@@ -1,4 +1,5 @@
 import { Component, Show, createSignal, createMemo, For } from 'solid-js';
+import { toDecimals } from '@tonkeeper/instantpay-sdk';
 import type { Handshake } from '@tonkeeper/instantpay-sdk';
 import { WalletType } from '../App';
 
@@ -12,7 +13,7 @@ export const WalletStatus: Component<WalletStatusProps> = (props) => {
 
   type Capability = {
     asset: ({ type: 'ton'; symbol: string; decimals: number } | { type: 'jetton'; master: string; symbol: string; decimals: number });
-    limit: string;
+    limit: bigint;
   };
 
   const capabilities = createMemo(() => props.handshake?.capabilities ?? null);
@@ -100,7 +101,7 @@ export const WalletStatus: Component<WalletStatusProps> = (props) => {
                           <span>
                             {c.asset.symbol} {c.asset.type === 'jetton' ? `(${c.asset.master.slice(0, 8)}…${c.asset.master.slice(-8)})` : ''}
                           </span>
-                          <span class="text-slate-500 text-xs">≤ {c.limit} per tx</span>
+                          <span class="text-slate-500 text-xs">≤ {toDecimals(c.limit, c.asset.decimals)} per tx</span>
                         </li>
                       )}
                     </For>

@@ -6,7 +6,8 @@ import {
   InstantPay as InstantPay,
   PayButtonParams,
   PaymentRequest,
-  InstantPayInvalidParamsError
+  InstantPayInvalidParamsError,
+  toDecimals
 } from '@tonkeeper/instantpay-sdk';
 import { WalletType } from '../App';
 
@@ -73,7 +74,7 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
       return String(Math.max(1, Math.ceil((req.expiresAt - nowSec) / 60)));
     })();
     setCustomPrefill({
-      amount: req.amount,
+      amount: typeof req.amount === 'bigint' ? toDecimals(req.amount, req.asset.decimals) : req.amount,
       asset: req.asset,
       recipient: req.recipient,
       label: scenario.params.label,

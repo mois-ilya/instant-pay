@@ -31,7 +31,6 @@ export default defineConfig({
     rollupOptions: {
       plugins: [
         // Polyfill Node core modules in Rollup build
-        // @ts-expect-error types for this plugin are not provided
         NodeModulesPolyfillPlugin()
       ]
     }
