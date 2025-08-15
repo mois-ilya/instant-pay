@@ -54,13 +54,15 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
       decimals: 9
     };
 
+    const existTon = fromWallet.find(a => a.type === 'ton');
+
     const demoTon: PaymentRequest['asset'] = {
       type: 'ton',
       symbol: 'TON',
       decimals: 9
     };
 
-    return Array.from(new Set([demoTon, ...fromWallet, demoJetton]));
+    return existTon ? [...fromWallet, demoJetton] : [demoTon, ...fromWallet, demoJetton];
   };
 
 

@@ -54,7 +54,7 @@ export const DemoCustomConfigurator: Component<DemoCustomConfiguratorProps> = (p
       const list = props.assets;
       const found = list.find(a => (a.type === 'ton' ? 'ton' : `jetton:${a.master}`) === selectedAssetKey());
       if (found) return found;
-      return { type: 'ton', symbol: 'TON', decimals: 9 };
+      throw new Error(`Asset ${selectedAssetKey()} not found in assets list`);
     };
     const request: PayButtonParams['request'] = {
       amount: amount(),
