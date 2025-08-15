@@ -195,7 +195,7 @@ export type InstantPayEvent =
 
 SDK-only events:
 
-- inited: `{ type: 'inited'; injected: boolean; handshake?: Handshake }`
+  
   | { type: 'show'; invoiceId: string }                        // кнопка отрисована и готова к нажатию
   | { type: 'click'; invoiceId: string }                       // пользователь нажал кнопку
   | { type: 'sent'; invoiceId: string; boc: string }           // сообщение сформировано и отправлено

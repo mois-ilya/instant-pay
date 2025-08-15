@@ -2,7 +2,7 @@
  * Mock Wallet Implementation (InstantPay 1.0)
  */
 
-import { InstantPayEmitter } from './emitter';
+import { InstantPayEmitter } from '@tonkeeper/instantpay-utils';
 import type { InstantPayAPI, Handshake, PayButtonParams, PaymentRequest, InstantPayEvent } from '@tonkeeper/instantpay-protocol';
 import { validatePayButtonParams } from './validation';
 import { toDecimals } from '@tonkeeper/instantpay-utils';
@@ -19,7 +19,7 @@ import { InstantPayInvalidParamsError } from './errors';
  */
 export class MockWallet implements InstantPayAPI {
     public readonly protocolVersion = '1.0.0';
-    public readonly events: InstantPayEmitter;
+    public readonly events: InstanceType<typeof InstantPayEmitter>;
 
     private _current: PayButtonParams | null = null;
     private _clicked = false;

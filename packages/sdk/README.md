@@ -14,10 +14,7 @@ pnpm add @tonkeeper/instantpay-sdk
 import { InstantPaySDK } from '@tonkeeper/instantpay-sdk';
 
 const sdk = new InstantPaySDK();
-
- sdk.events.on('inited', (e) => {
-   console.log('SDK inited', e);
- });
+ 
 ```
 
 ## Fallback behaviour via fallbackApi
@@ -74,7 +71,6 @@ const sdk = new InstantPaySDK({
 
 The SDK re-emits wallet protocol events via `sdk.events`:
 
-- `inited` (SDK-only; emitted in both injected and fallback modes)
 - `show`
 - `click`
 - `sent`

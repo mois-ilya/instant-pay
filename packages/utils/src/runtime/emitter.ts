@@ -50,3 +50,6 @@ export class ProtocolEventEmitter implements InstantPayEventEmitter {
   clear(): void { this._listeners.clear(); }
 }
 
+// Backward-friendly alias so consumers can import a familiar name
+export const InstantPayEmitter = ProtocolEventEmitter;
+

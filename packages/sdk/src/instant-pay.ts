@@ -4,7 +4,7 @@
  * - Delegates to provided fallbackApi when not injected
  */
 
-import { InstantPayEmitter, type SDKEvent } from './events';
+import { InstantPayEmitter } from '@tonkeeper/instantpay-utils';
 import type {
 	PayButtonParams,
 	PaymentRequest,
@@ -43,7 +43,7 @@ export type InstantPayProvider = {
 
 const FORWARDED_EVENTS = ['show', 'click', 'sent', 'cancelled'] as const;
 export class InstantPaySDK {
-  public readonly events: InstantPayEmitter;
+  public readonly events: InstanceType<typeof InstantPayEmitter>;
   private provider?: Omit<InstantPayProvider, 'events'>;
   private hs?: Handshake;
 
@@ -63,7 +63,6 @@ export class InstantPaySDK {
       };
       this.hs = injected.handshake({ name: this._detectAppName(), url: location.origin });
       this._forwardEvents(injected.events);
-      this.events.emit({ type: 'inited', injected: true, handshake: this.hs } satisfies SDKEvent);
       return;
     }
 
@@ -71,7 +70,6 @@ export class InstantPaySDK {
     if (opts?.fallbackApi) {
       this.provider = opts.fallbackApi;
       this._forwardEvents(opts.fallbackApi.events);
-      this.events.emit({ type: 'inited', injected: false } satisfies SDKEvent);
       return;
     }
 

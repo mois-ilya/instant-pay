@@ -1,28 +1,17 @@
-/**
- * InstantPay SDK
- * 
- * Main SDK package for dApp developers to integrate with
- * the InstantPay 1.0 protocol through wallet extensions.
- */
-
-// Core SDK exports
+// Core
 export { InstantPaySDK } from './instant-pay';
-// Backward-compatible alias for demo until migrated
 export { InstantPaySDK as InstantPay } from './instant-pay';
-export { InstantPayEmitter } from './events';
-export type { SDKEvent } from './events';
 
-// Re-export all protocol types so users can import everything from SDK
+// Events (shared emitter)
+export { InstantPayEmitter } from '@tonkeeper/instantpay-utils';
+
+// Types (protocol)
 export * from '@tonkeeper/instantpay-protocol';
-export type { InstantPayInitOptions } from './instant-pay';
-export type { InstantPayProvider } from './instant-pay';
+export type { InstantPayInitOptions, InstantPayProvider } from './instant-pay';
 
-// Note: InstantPayEventEmitter type comes from protocol re-exports
+// Errors
+export { InstantPayInvalidParamsError, InstantPayConcurrentOperationError } from './errors';
 
-// Error exports
-export { InstantPayInvalidParamsError } from './errors';
-export { InstantPayConcurrentOperationError } from './errors';
-
-// Validation exports
+// Validation and utils
 export { validatePayButtonParams } from './validation';
 export { fromDecimals, toDecimals } from '@tonkeeper/instantpay-utils';

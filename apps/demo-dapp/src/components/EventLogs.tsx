@@ -1,6 +1,6 @@
 import { Component, Show, For, createSignal, createEffect, onCleanup } from 'solid-js';
-import { InstantPay, InstantPayEmitter } from '@tonkeeper/instantpay-sdk';
-import type { InstantPayEvent } from '@tonkeeper/instantpay-sdk';
+import { InstantPay } from '@tonkeeper/instantpay-sdk';
+import type { InstantPayEvent, InstantPayEventEmitter } from '@tonkeeper/instantpay-sdk';
 
 interface EventLogsProps {
   instantPay: InstantPay | null;
@@ -83,7 +83,7 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
   });
 
 
-  const setupEventListeners = (events: InstantPayEmitter): Array<() => void> => {
+  const setupEventListeners = (events: InstantPayEventEmitter): Array<() => void> => {
     console.log('[EventLogs] Setting up listeners for events emitter:', events);
     // Listen to all InstantPay events
     const eventTypes: InstantPayEvent['type'][] = ['show', 'click', 'sent', 'cancelled'];
@@ -91,7 +91,7 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
     const unsubs: Array<() => void> = [];
     eventTypes.forEach((eventType) => {
       console.log('[EventLogs] Adding listener for:', eventType);
-      const off = events.on(eventType, (event) => {
+      const off = events.on(eventType, (event: InstantPayEvent) => {
         console.log('[EventLogs] Received InstantPay event:', event);
         // Add event to the beginning of the array (newest first) with timestamp
         const eventWithTimestamp = { ...event, timestamp: Date.now() };

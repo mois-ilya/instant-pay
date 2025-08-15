@@ -132,7 +132,6 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
     const ip = props.instantPay;
     if (!ip) return;
     const clear = () => setError(null);
-    // 'inited' removed; rely on show/click/sent/cancelled
     const offShow = ip.events.on('show', clear);
     const offClick = ip.events.on('click', clear);
     const offSent = ip.events.on('sent', clear);
