@@ -7,7 +7,7 @@ export abstract class InstantPayError extends Error {
 }
 
 export class InstantPayInvalidParamsError extends InstantPayError {
-  readonly name = 'InstantPayInvalidParamsError' as const;
+  readonly name = 'InstantPayInvalidParamsError';
   constructor(message: string = 'Invalid parameters provided to setPayButton()') {
     super(message);
   }

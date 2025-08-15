@@ -20,7 +20,7 @@ export class InstantPayEmitter implements InstantPayEventEmitter {
     const wrapped: InternalListener = (event) => {
       fn(event as Extract<InstantPayEvent, { type: E }>);
     };
-    const key = fn as unknown as ListenerKey;
+    const key = fn as ListenerKey;
     bucket.set(key, wrapped);
     return () => this.off(type, fn);
   }
@@ -28,7 +28,7 @@ export class InstantPayEmitter implements InstantPayEventEmitter {
   off<E extends InstantPayEvent['type']>(type: E, fn: EventListener<E>): void {
     const bucket = this._listeners.get(type);
     if (!bucket) return;
-    const key = fn as unknown as ListenerKey;
+    const key = fn as ListenerKey;
     if (bucket.has(key)) {
       bucket.delete(key);
       if (bucket.size === 0) this._listeners.delete(type);

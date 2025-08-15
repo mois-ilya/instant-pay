@@ -5,6 +5,8 @@
 import { InstantPayEmitter } from './emitter';
 import type { InstantPayAPI, Handshake, PayButtonParams, PaymentRequest, InstantPayEvent } from '@tonkeeper/instantpay-protocol';
 import { validatePayButtonParams } from './validation';
+import { toDecimals } from '@tonkeeper/instantpay-utils';
+import { fromDecimals } from '@tonkeeper/instantpay-utils';
 import { InstantPayInvalidParamsError } from './errors';
 
 // v1 mock has no extended runtime config
@@ -16,7 +18,7 @@ import { InstantPayInvalidParamsError } from './errors';
  * Implements InstantPay API with simple pay button for mobile dApp browsers
  */
 export class MockWallet implements InstantPayAPI {
-    public readonly protocolVersion = '1.0.0' as const;
+    public readonly protocolVersion = '1.0.0';
     public readonly events: InstantPayEmitter;
 
     private _current: PayButtonParams | null = null;
@@ -30,16 +32,16 @@ export class MockWallet implements InstantPayAPI {
     }
 
     /** Demo capabilities for provider (mock only) */
-    private _capabilities = {
+    private _capabilities: Handshake['capabilities'] = {
         requestPayment: true,
         getActive: true,
         instant: {
             limits: [
-                { asset: { type: 'ton', symbol: 'TON', decimals: 9 } as const, limit: '10' },
-                { asset: { type: 'jetton' as const, master: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs', symbol: 'USDT', decimals: 6 }, limit: '1000' }
+                { asset: { type: 'ton', symbol: 'TON', decimals: 9 }, limit: 10n },
+                { asset: { type: 'jetton', master: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs', symbol: 'USDT', decimals: 6 }, limit: 1000n }
             ]
         }
-    } as Handshake['capabilities'];
+    };
 
     handshake(_app: { name: string; url?: string; iconUrl?: string }, require?: { minProtocol?: `${number}.${number}.${number}` }): Handshake {
         if (require?.minProtocol && this._compareSemver(this.protocolVersion, require.minProtocol) < 0) {
@@ -74,7 +76,7 @@ export class MockWallet implements InstantPayAPI {
         this._current = params;
         this._showPayButtonOverlay(params);
         // Emit 'show' when button is rendered
-        const ev: InstantPayEvent = { type: 'show', request: params.request } as InstantPayEvent;
+        const ev: InstantPayEvent = { type: 'show', request: params.request };
         this.events.emit(ev);
     }
 
@@ -165,31 +167,33 @@ export class MockWallet implements InstantPayAPI {
     private _createSimpleButtonHTML(params: PayButtonParams): string {
         const currency = params.request.asset.symbol ?? (params.request.asset.type === 'jetton' ? 'TOKEN' : 'TON');
             
+        const labelMap: { [key in PayButtonParams['label']]: string } = {
+            buy: 'Buy',
+            unlock: 'Unlock',
+            use: 'Use',
+            get: 'Get',
+            open: 'Open',
+            start: 'Start',
+            retry: 'Retry',
+            show: 'Show',
+            play: 'Play',
+            try: 'Try'
+        } as const;
+
+        const incoming = String(params.label);
+        if (!Object.prototype.hasOwnProperty.call(labelMap, incoming)) {
+            throw new InstantPayInvalidParamsError('Invalid label');
+        }
+
+        const prefix = labelMap[params.label];
+        const a = params.request.amount;
+        const d = params.request.asset.decimals;
+        const shown = typeof a === 'bigint' ? toDecimals(a, d) : a;
+
         return `
             <div class="mock-wallet-simple-container">
                 <button class="mock-wallet-simple-btn" data-action="pay">
-                    ${(() => {
-                        const map: Record<string, string> = {
-                            buy: 'Buy',
-                            continue: 'Continue',
-                            unlock: 'Unlock',
-                            use: 'Use',
-                            get: 'Get',
-                            open: 'Open',
-                            play: 'Play',
-                            start: 'Start',
-                            retry: 'Retry',
-                            'play again': 'Play again',
-                            play_again: 'Play again',
-                            'another try': 'Another try',
-                            next: 'Next',
-                            try: 'Try',
-                            show: 'Show'
-                        };
-                        const code = String(params.label);
-                        const prefix = map[code] ?? (code.charAt(0).toUpperCase() + code.slice(1));
-                        return `${prefix} for ${params.request.amount} ${currency}`;
-                    })()}
+                    ${prefix} for ${shown} ${currency}
                 </button>
             </div>
         `;
@@ -266,17 +270,17 @@ export class MockWallet implements InstantPayAPI {
   private _isInstantSupported(params: PayButtonParams): boolean {
     // Require params.instantPay flag
     if (!params.instantPay) return false;
-    const { asset, amount } = params.request;
+    const { asset } = params.request;
     const caps = this._capabilities.instant?.limits ?? [];
-    let capLimitStr: string | null = null;
+    let limit: bigint | null = null;
     for (const c of caps) {
-      if (asset.type === 'ton' && c.asset.type === 'ton') { capLimitStr = c.limit; break; }
-      if (asset.type === 'jetton' && c.asset.type === 'jetton' && c.asset.master === asset.master) { capLimitStr = c.limit; break; }
+      if (asset.type === 'ton' && c.asset.type === 'ton') { limit = c.limit; break; }
+      if (asset.type === 'jetton' && c.asset.type === 'jetton' && c.asset.master === asset.master) { limit = c.limit; break; }
     }
-    if (!capLimitStr) return false;
-    const limit = Number(capLimitStr);
-    const value = Number(amount);
-    if (!isFinite(limit) || !isFinite(value)) return false;
+    if (limit === null) return false;
+
+    const amount = params.request.amount;
+    const value = typeof amount === 'bigint' ? amount : fromDecimals(amount, params.request.asset.decimals);
     return value <= limit;
   }
 
@@ -290,13 +294,14 @@ export class MockWallet implements InstantPayAPI {
       this._confirmElement = null;
     }
     const currency = request.asset.symbol ?? (request.asset.type === 'jetton' ? 'TOKEN' : 'TON');
+    const amountStr = typeof request.amount === 'bigint' ? toDecimals(request.amount, request.asset.decimals) : request.amount;
     const container = document.createElement('div');
     container.className = 'mock-wallet-confirm-backdrop';
     container.innerHTML = `
       <div class="mock-wallet-confirm-modal" role="dialog" aria-modal="true">
         <div class="mock-wallet-confirm-title">Confirm Payment</div>
         <div class="mock-wallet-confirm-content">
-          <div class="row"><span>Amount</span><strong>${request.amount} ${currency}</strong></div>
+          <div class="row"><span>Amount</span><strong>${amountStr} ${currency}</strong></div>
           <div class="row"><span>Recipient</span><code>${request.recipient}</code></div>
           <div class="row"><span>Invoice ID</span><code>${request.invoiceId}</code></div>
           ${request.asset.type === 'jetton' ? `<div class="row"><span>Jetton</span><code>${request.asset.master}</code></div>` : ''}

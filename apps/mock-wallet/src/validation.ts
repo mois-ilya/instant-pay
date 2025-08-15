@@ -31,7 +31,16 @@ function getValidatePayButton(): ValidateFunction {
 
 export function validatePayButtonParams(params: unknown): ValidationResult {
   const validate = getValidatePayButton();
-  const ok = validate(params);
+  let normalized = params as any;
+  try {
+    if (normalized && typeof normalized === 'object' && 'request' in normalized) {
+      const req = (normalized as any).request ?? {};
+      if (typeof req.amount === 'bigint') {
+        normalized = { ...normalized, request: { ...req, amount: req.amount.toString() } };
+      }
+    }
+  } catch {}
+  const ok = validate(normalized);
   if (!ok) {
     const msg = validate.errors?.[0]?.message || 'INVALID_PARAMS';
     return { valid: false, error: `INVALID_PARAMS: ${msg}` };
