@@ -53,11 +53,13 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
     switch (event.type) {
       case 'sent':
         return { request: event.request, boc: event.boc };
-      case 'click':
       case 'voided':
+        return { request: event.request, reason: event.reason };
       case 'cancelled':
+        return { request: event.request, reason: event.reason };
+      case 'click':
       case 'show':
-        return { request: (event as Extract<InstantPayEvent, { type: 'click' | 'voided' | 'cancelled' | 'show' }>).request };
+        return { request: event.request };
       default:
         return {} as never;
     }
