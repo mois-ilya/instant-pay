@@ -59,7 +59,7 @@ InstantPay injects a wallet‑provided object `window.tonkeeper.instantPay` that
 -   `getActive()` – узнать активный счёт, если он есть
 -   `cancel(invoiceId?)` – отменить до клика
 -   `requestPayment()` – опциональный headless‑сценарий без кнопки
--   `events` – эмиттер событий `ready`, `click`, `sent`, `cancelled`, `handoff`
+-   `events` – эмиттер событий `ready`, `click`, `sent`, `cancelled`
 
 ## 🧪 Demo Features
 

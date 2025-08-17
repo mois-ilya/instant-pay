@@ -75,7 +75,6 @@ The SDK re-emits wallet protocol events via `sdk.events`:
 - `click`
 - `sent`
 - `cancelled`
-- `handoff` (legacy deeplink only)
 
 ## Types
 

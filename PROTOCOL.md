@@ -22,7 +22,7 @@
   **После клика** до завершения операции **любые изменения запрещены**.
 * События: `click` → `sent(boc)` **или** `cancelled(reason)`.
   Дополнительно при фолбэке из SDK: `handoff(url, scheme)` — сигнал «начинай трекинг в блокчейне».
-* Фолбэк, если inject недоступен: SDK создаёт стандартный диплинк (mobile: `ton://…`, desktop: `https://app.tonkeeper.com/…`) и отдаёт его в пользовательский колбэк.
+* Фолбэк, если inject недоступен: SDK создаёт стандартный диплинк (mobile: `ton://…`, desktop: `https://app.tonkeeper.com/…`) и отдаёт его в пользовательский колбэк. // TODO: устаревшее
 
 ---
 
@@ -200,7 +200,6 @@ SDK-only events:
   | { type: 'click'; invoiceId: string }                       // пользователь нажал кнопку
   | { type: 'sent'; invoiceId: string; boc: string }           // сообщение сформировано и отправлено
   | { type: 'cancelled'; invoiceId: string; reason?: CancelReason }
-  | { type: 'handoff'; invoiceId: string; url: string; scheme: 'ton' | 'https' }; // фолбэк
 ```
 
 ```ts
@@ -334,7 +333,7 @@ const sdk = new InstantPaySDK({
 ```
 
 * SDK вызывает `onFallbackShow`, если inject недоступен, и `onFallbackHide` — при скрытии.
-* Когда ваш UI вызывает `openDeeplink()`, SDK **эмитит** `handoff { invoiceId, url, scheme }`. На текущий момент URL, передаваемый в `handoff`, принудительно переводится в схему `https` для совместимости, даже если исходная схема была `ton`.
+* Когда ваш UI вызывает `openDeeplink()`, SDK **эмитит** `handoff { invoiceId, url, scheme }`. На текущий момент URL, передаваемый в `handoff`, принудительно переводится в схему `https` для совместимости, даже если исходная схема была `ton`. // TODO: устаревшее
 * Отдельного `cancelled` при фолбэке нет; если пользователь не завершил оплату, dApp может завершить ожидание по таймауту на своей стороне.
 
 ---
@@ -403,11 +402,6 @@ const sdk = new InstantPaySDK({
     const btn = document.getElementById('fallback');
     if (btn) btn.onclick = null;
   }
-});
-
-sdk.events.on('handoff', (e) => {
-  // dApp/бэкенд начинает отслеживание по invoiceId
-  startTracking(e.invoiceId);
 });
 
 sdk.events.on('sent', (e) => {
@@ -539,17 +533,6 @@ function updatePlan(plan: { amountTon: string }) {
       "properties": { "type": { "const": "cancelled" }, "invoiceId": { "type": "string", "format": "uuid" }, "reason": { "type": "string", "enum": ["user","app","wallet","replaced","expired","unsupported_env"] } },
       "additionalProperties": false
     },
-    {
-      "type": "object",
-      "required": ["type","invoiceId","url","scheme"],
-      "properties": {
-        "type": { "const": "handoff" },
-        "invoiceId": { "type": "string", "format": "uuid" },
-        "url": { "type": "string", "format": "uri" },
-        "scheme": { "type": "string", "enum": ["ton","https"] }
-      },
-      "additionalProperties": false
-    }
   ]
 }
 ```
@@ -600,7 +583,7 @@ function updatePlan(plan: { amountTon: string }) {
 ## 13. Рекомендации по трекингу платежа
 
 * **Inject‑путь:** начинайте трекинг **после** `sent(boc)`. Вычислите message‑hash и ждите появления в блоках/эксплорере.
-* **Фолбэк:** начинайте трекинг **после** `handoff`. Коррелируйте по `(recipient, amount, asset, time‑window)`; если использовали `bin`/IP10‑payload — индексируйте по `invoiceId` внутри payload (когда кошелёк его применил).
+* **Фолбэк:** начинайте трекинг **после** `handoff`. Коррелируйте по `(recipient, amount, asset, time‑window)`; если использовали `bin`/IP10‑payload — индексируйте по `invoiceId` внутри payload (когда кошелёк его применил). // TODO: устаревшее
 
 ---
 
@@ -643,7 +626,6 @@ setPayButton(B)                  -> ERROR ACTIVE_OPERATION
 ```
 setPayButton(A, onUnsupported)   -> onUnsupported({ url, open })
 [пользователь нажал вашу кнопку] -> open()
-                                   handoff(ia, url, scheme)
 [далее dApp отслеживает сеть]
 ```
 
@@ -656,7 +638,6 @@ setPayButton(A, onUnsupported)   -> onUnsupported({ url, open })
 * [ ] Строгие валидаторы (Ajv) по схемам.
 * [ ] Правила замены/активной операции реализованы.
 * [ ] `sent` отдаёт base64 BOC.
-* [ ] Фолбэк с `handoff`, mobile/desktop схемы.
 * [ ] Мок‑кошелёк с режимами и логами.
 * [ ] Демонстрация сценариев в dApp‑демо.
 ----
