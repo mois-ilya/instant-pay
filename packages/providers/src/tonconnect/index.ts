@@ -85,7 +85,20 @@ export class TonConnectAdapter implements InstantPayProvider {
       const activeId = this.currentRequest ? this.currentRequest.invoiceId : '';
       throw new InstantPayConcurrentOperationError('Another payment is currently in progress', activeId);
     }
-    this.validateParams(params);
+    
+    try {
+      this.validateParams(params);
+    } catch (error) {
+      // Hide current button if visible and emit cancelled for the active invoice
+      const activeRequest = this.currentRequest;
+      this.cleanupUI();
+      this.currentRequest = null;
+      if (activeRequest) {
+        (this.events as any).emit({ type: 'cancelled', request: activeRequest, reason: 'wallet' });
+      }
+      throw error;
+    }
+    
     const req = params.request;
     if (this.currentRequest && this.currentRequest.invoiceId !== req.invoiceId) {
       (this.events as any).emit({ type: 'voided', request: this.currentRequest, reason: 'replaced' });
