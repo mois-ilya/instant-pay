@@ -137,9 +137,10 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
     const offShow = ip.events.on('show', clear);
     const offClick = ip.events.on('click', clear);
     const offSent = ip.events.on('sent', clear);
+    const offVoided = ip.events.on('voided', clear);
     const offCancelled = ip.events.on('cancelled', clear);
     return () => {
-      offShow(); offClick(); offSent(); offCancelled();
+      offShow(); offClick(); offSent(); offVoided(); offCancelled();
     };
   });
 

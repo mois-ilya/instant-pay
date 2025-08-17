@@ -3,7 +3,7 @@
  */
 
 import { InstantPayEmitter } from '@tonkeeper/instantpay-utils';
-import type { InstantPayAPI, Handshake, PayButtonParams, PaymentRequest, InstantPayEvent } from '@tonkeeper/instantpay-protocol';
+import type { InstantPayAPI, Handshake, PayButtonParams, PaymentRequest, InstantPayEvent, RequestPaymentCompletionEvent } from '@tonkeeper/instantpay-protocol';
 import { validatePayButtonParams } from './validation';
 import { toDecimals } from '@tonkeeper/instantpay-utils';
 import { fromDecimals } from '@tonkeeper/instantpay-utils';
@@ -70,7 +70,7 @@ export class MockWallet implements InstantPayAPI {
 
         // Replacement semantics before click
         if (this._current && this._current.request.invoiceId !== params.request.invoiceId) {
-            this.events.emit({ type: 'cancelled', request: this._current.request, reason: 'replaced' });
+            this.events.emit({ type: 'voided', request: this._current.request, reason: 'replaced' });
         }
 
         this._current = params;
@@ -84,12 +84,13 @@ export class MockWallet implements InstantPayAPI {
      * Hide the pay button overlay
      */
     hidePayButton(): void {
+        if (this._clicked) throw new Error('ACTIVE_OPERATION');
         if (this._current) {
             const request = this._current.request;
             this._current = null;
             this._clicked = false;
             this._hideOverlay();
-            this.events.emit({ type: 'cancelled', request, reason: 'app' });
+            this.events.emit({ type: 'voided', request, reason: 'hidden' });
         } else {
             // Idempotent: still hide overlay if any
             this._hideOverlay();
@@ -107,13 +108,13 @@ export class MockWallet implements InstantPayAPI {
             const request = this._current.request;
             this._current = null;
             this._hideOverlay();
-            this.events.emit({ type: 'cancelled', request, reason: 'app' });
+            this.events.emit({ type: 'voided', request, reason: 'hidden' });
         }
     }
 
-    async requestPayment(_req: PaymentRequest): Promise<{ status: 'sent'; boc: string } | { status: 'cancelled'; reason?: 'user' | 'app' | 'wallet' | 'replaced' | 'expired' | 'unsupported_env' }> {
+    async requestPayment(request: PaymentRequest): Promise<RequestPaymentCompletionEvent> {
         // For mock, immediately send
-        return { status: 'sent', boc: this._generateMockBoc() };
+        return { type: 'sent', request, boc: this._generateMockBoc() };
     }
 
     // activeInvoiceId accessor removed in v1 mock

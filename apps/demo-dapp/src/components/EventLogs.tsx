@@ -21,6 +21,8 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
         return '👆';
       case 'sent':
         return '✅';
+      case 'voided':
+        return '🚫';
       case 'cancelled':
         return '❌';
       
@@ -37,6 +39,8 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
         return 'font-bold text-blue-600 uppercase text-xs';
       case 'sent':
         return 'font-bold text-green-600 uppercase text-xs';
+      case 'voided':
+        return 'font-bold text-orange-600 uppercase text-xs';
       case 'cancelled':
         return 'font-bold text-red-600 uppercase text-xs';
       
@@ -50,9 +54,10 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
       case 'sent':
         return { request: event.request, boc: event.boc };
       case 'click':
+      case 'voided':
       case 'cancelled':
       case 'show':
-        return { request: (event as Extract<InstantPayEvent, { type: 'click' | 'cancelled' | 'show' }>).request };
+        return { request: (event as Extract<InstantPayEvent, { type: 'click' | 'voided' | 'cancelled' | 'show' }>).request };
       default:
         return {} as never;
     }
@@ -85,7 +90,7 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
   const setupEventListeners = (events: InstantPayEventEmitter): Array<() => void> => {
     console.log('[EventLogs] Setting up listeners for events emitter:', events);
     // Listen to all InstantPay events
-    const eventTypes: InstantPayEvent['type'][] = ['show', 'click', 'sent', 'cancelled'];
+    const eventTypes: InstantPayEvent['type'][] = ['show', 'click', 'sent', 'voided', 'cancelled'];
     
     const unsubs: Array<() => void> = [];
     eventTypes.forEach((eventType) => {

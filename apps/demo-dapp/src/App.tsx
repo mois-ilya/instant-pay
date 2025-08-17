@@ -70,14 +70,18 @@ export const App: Component = () => {
                 }
             });
             
-            // Listen for 'cancelled' events to reset tracking
+            // Listen for 'cancelled' and 'voided' events to reset tracking
             const unsubCancelled = ip.events.on('cancelled', () => {
+                setTrackingBoc(null);
+            });
+            const unsubVoided = ip.events.on('voided', () => {
                 setTrackingBoc(null);
             });
             
             onCleanup(() => {
                 unsubSent();
                 unsubCancelled();
+                unsubVoided();
             });
         };
         const t = setTimeout(initAfterMount, 0);

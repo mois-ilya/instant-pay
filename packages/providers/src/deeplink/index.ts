@@ -1,4 +1,4 @@
-import type { InstantPayProvider, PayButtonParams, PaymentRequest, RequestPaymentResult } from '@tonkeeper/instantpay-protocol';
+import type { InstantPayProvider, PayButtonParams, PaymentRequest, RequestPaymentCompletionEvent } from '@tonkeeper/instantpay-protocol';
 import { InstantPayEmitter } from '@tonkeeper/instantpay-utils';
 
 // TODO: Implement Deeplink provider
@@ -18,7 +18,7 @@ export class DeeplinkAdapter implements InstantPayProvider {
     throw new Error('Deeplink provider not yet implemented');
   }
 
-  async requestPayment(_request: PaymentRequest): Promise<RequestPaymentResult> {
+  async requestPayment(_request: PaymentRequest): Promise<RequestPaymentCompletionEvent> {
     // TODO: Implement deeplink payment request
     throw new Error('Deeplink provider not yet implemented');
   }
