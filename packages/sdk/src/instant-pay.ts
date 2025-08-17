@@ -54,7 +54,7 @@ export class InstantPaySDK {
         requestPayment: injected.requestPayment.bind(injected),
         getActive: injected.getActive.bind(injected),
       };
-      this.hs = injected.handshake({ name: this._detectAppName(), url: location.origin });
+      this.hs = injected.handshake({ name: this._detectAppName() });
       this._forwardEvents(injected.events);
       return;
     }

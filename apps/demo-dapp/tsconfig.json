@@ -27,7 +27,7 @@
   "references": [
     { "path": "../../packages/sdk" },
     { "path": "../../packages/protocol" },
-    { "path": "../../packages/tonconnect-provider" },
+    { "path": "../../packages/providers" },
     { "path": "../mock-wallet" }
   ]
 }

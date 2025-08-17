@@ -1,7 +1,7 @@
 {
-  "name": "@tonkeeper/instantpay-tonconnect",
+  "name": "@tonkeeper/instantpay-providers",
   "version": "0.1.0",
-  "description": "InstantPay provider implemented via TonConnect UI",
+  "description": "InstantPay providers for different wallet connections (TonConnect, Deeplink, etc.)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -25,7 +25,9 @@
   "keywords": [
     "tonkeeper",
     "instant-pay",
+    "providers",
     "tonconnect",
+    "deeplink",
     "ton",
     "wallet"
   ],

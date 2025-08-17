@@ -7,7 +7,7 @@ import { DemoScenarios } from './components/DemoScenarios';
 import { TransactionTracking } from './components/TransactionTracking';
 import { defaultScenarios } from './scenarios';
 import { TonConnectUI } from '@tonconnect/ui';
-import { createTonConnectProvider } from '@tonkeeper/instantpay-tonconnect';
+import { createTonConnectProvider } from '@tonkeeper/instantpay-providers';
 
 export type WalletType = 'real' | 'mock' | 'none';
 

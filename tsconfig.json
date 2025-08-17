@@ -17,7 +17,7 @@
       "@tonkeeper/instantpay-protocol": ["./packages/protocol/src"],
       "@tonkeeper/instantpay-sdk": ["./packages/sdk/src"],
       "@tonkeeper/instantpay-utils": ["./packages/utils/src"],
-      "@tonkeeper/instantpay-tonconnect": ["./packages/tonconnect-provider/src"],
+      "@tonkeeper/instantpay-providers": ["./packages/providers/src"],
       "mock-wallet": ["./apps/mock-wallet/src"],
       "demo-dapp": ["./apps/demo-dapp/src"]
     }
@@ -27,7 +27,7 @@
     {"path": "./packages/protocol"},
     {"path": "./packages/sdk"},
     {"path": "./packages/utils"},
-    {"path": "./packages/tonconnect-provider"},
+    {"path": "./packages/providers"},
     {"path": "./apps/mock-wallet"}
   ]
 }

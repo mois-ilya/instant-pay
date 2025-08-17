@@ -13,8 +13,6 @@ export type InstantPaySemver = `${number}.${number}.${number}`;
 // dApp metadata provided during handshake
 export interface AppMeta {
   name: string;
-  url?: string;
-  iconUrl?: string;
 }
 
 // Normative provider capabilities
