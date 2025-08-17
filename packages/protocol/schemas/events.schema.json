@@ -3,7 +3,6 @@
   "title": "InstantPayEvent",
   "description": "Union of events emitted by the wallet to the dApp during the InstantPay lifecycle.",
   "oneOf": [
-    
     {
       "type": "object",
       "required": ["type","request"],
@@ -34,11 +33,21 @@
     },
     {
       "type": "object",
-      "required": ["type","request"],
+      "required": ["type","request","reason"],
+      "properties": {
+        "type": { "const": "voided", "description": "Payment request was voided before click." },
+        "request": { "$ref": "payment-request.schema.json", "description": "Full payment request associated with the event." },
+        "reason": { "type": "string", "enum": ["hidden","replaced","expired","wallet"], "description": "Voided reason (pre-click)." }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": ["type","request","reason"],
       "properties": {
         "type": { "const": "cancelled", "description": "Payment flow was cancelled." },
         "request": { "$ref": "payment-request.schema.json", "description": "Full payment request associated with the event." },
-        "reason": { "type": "string", "enum": ["user","app","wallet","replaced","expired","unsupported_env"], "description": "Optional cancellation reason." }
+        "reason": { "type": "string", "enum": ["user","wallet","expired","unsupported_env"], "description": "Cancellation reason (post-click)." }
       },
       "additionalProperties": false
     }

@@ -10,7 +10,7 @@ import type {
 	PaymentRequest,
 	InstantPayAPI,
 	Handshake,
-	RequestPaymentResult,
+	RequestPaymentCompletionEvent,
 	InstantPayProvider,
 	InstantPayEventEmitter
 } from '@tonkeeper/instantpay-protocol';
@@ -34,7 +34,7 @@ export interface InstantPayInitOptions {
 	fallbackApi?: InstantPayProvider;
 }
 
-const FORWARDED_EVENTS = ['show', 'click', 'sent', 'cancelled'] as const;
+const FORWARDED_EVENTS = ['show', 'click', 'sent', 'voided', 'cancelled'] as const;
 export class InstantPaySDK {
   public readonly events: InstanceType<typeof InstantPayEmitter>;
   private provider?: Omit<InstantPayProvider, 'events'>;
@@ -77,7 +77,7 @@ export class InstantPaySDK {
     this.provider.hidePayButton();
   }
 
-  async requestPayment(request: PaymentRequest): Promise<RequestPaymentResult> {
+  async requestPayment(request: PaymentRequest): Promise<RequestPaymentCompletionEvent> {
     if (!this.provider?.requestPayment) throw new Error('NOT_SUPPORTED');
     return this.provider.requestPayment(request);
   }

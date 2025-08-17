@@ -67,14 +67,25 @@ export type InstantPayEvent =
     }
   | {
       /**
+       * Payment request was voided before click.
+       */
+      type: 'voided';
+      request: PaymentRequest;
+      /**
+       * Voided reason (pre-click).
+       */
+      reason: 'hidden' | 'replaced' | 'expired' | 'wallet';
+    }
+  | {
+      /**
        * Payment flow was cancelled.
        */
       type: 'cancelled';
       request: PaymentRequest;
       /**
-       * Optional cancellation reason.
+       * Cancellation reason (post-click).
        */
-      reason?: 'user' | 'app' | 'wallet' | 'replaced' | 'expired' | 'unsupported_env';
+      reason: 'user' | 'wallet' | 'expired' | 'unsupported_env';
     };
 
 export interface SchemasIndex {

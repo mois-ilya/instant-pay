@@ -20,7 +20,7 @@
 * API инжектируется кошельком в `window.tonkeeper.instantPay`.
 * dApp вызывает `setPayButton(params)` столько раз, сколько нужно **до клика** — это атомарные “замены” текущего намерения (см. § 6.3).
   **После клика** до завершения операции **любые изменения запрещены**.
-* События: `click` → `sent(boc)` **или** `cancelled(reason)`.
+* События: 'show', 'click', 'sent', 'voided(reason)' (докликовое), 'cancelled(reason)' (посткликовое).
   Дополнительно при фолбэке из SDK: `handoff(url, scheme)` — сигнал «начинай трекинг в блокчейне».
 * Фолбэк, если inject недоступен: SDK создаёт стандартный диплинк (mobile: `ton://…`, desktop: `https://app.tonkeeper.com/…`) и отдаёт его в пользовательский колбэк. // TODO: устаревшее
 
@@ -170,91 +170,57 @@ export interface PayButtonParams {
 }
 ```
 
-### 4.5. Результат headless‑пути
-
-```ts
-export type RequestPaymentResult =
-  | { status: 'sent'; boc: string }                                 // base64 BOC внешнего сообщения
-  | { status: 'cancelled'; reason?: CancelReason };
-
-export type CancelReason = 'user' | 'app' | 'wallet' | 'replaced' | 'expired' | 'unsupported_env';
-```
-
-**BOC** — base64 внешнего (external) сообщения, которое кошелёк отправил в сеть. dApp/бэкенд по нему может вычислить hash и отслеживать попадание в блоки.
-
 ---
 
-## 5. События
+## 5. События (нормативно)
 
 ```ts
 export type InstantPayEvent =
-| { type: 'show'; request: PaymentRequest }
-| { type: 'click'; request: PaymentRequest }
-| { type: 'sent'; request: PaymentRequest; boc: string }
-| { type: 'cancelled'; request: PaymentRequest; reason?: 'user' | 'app' | 'wallet' | 'replaced' | 'expired' | 'unsupported_env' }
-
-SDK-only events:
-
-  
-  | { type: 'show'; invoiceId: string }                        // кнопка отрисована и готова к нажатию
-  | { type: 'click'; invoiceId: string }                       // пользователь нажал кнопку
-  | { type: 'sent'; invoiceId: string; boc: string }           // сообщение сформировано и отправлено
-  | { type: 'cancelled'; invoiceId: string; reason?: CancelReason }
+  | { type: 'show'; request: PaymentRequest }
+  | { type: 'click'; request: PaymentRequest }
+  | { type: 'sent'; request: PaymentRequest; boc: string }
+  | { type: 'voided'; request: PaymentRequest; reason: 'hidden' | 'replaced' | 'expired' | 'wallet' }
+  | { type: 'cancelled'; request: PaymentRequest; reason: 'user' | 'wallet' | 'expired' | 'unsupported_env' };
 ```
 
-```ts
-export interface InstantPayEventEmitter {
-  on<T extends InstantPayEvent['type']>(
-    type: T,
-    cb: (e: Extract<InstantPayEvent, { type: T }>) => void
-  ): () => void;
-  off<T extends InstantPayEvent['type']>(type: T, cb: any): void;
-  once<T extends InstantPayEvent['type']>(type: T, cb: any): () => void;
-}
-```
+**Семантика:**
+- `voided` — завершение **до клика**; причины: `hidden` (dApp вызвал `hidePayButton()`), `replaced` (новый `setPayButton` до клика), `expired` (истёк срок до клика), `wallet` (кошелёк снял счёт сам).
+- `cancelled` — завершение **после клика**; причины: `user` (пользователь отменил/закрыл), `wallet` (ошибка на стороне кошелька), `expired` (истёк срок после клика), `unsupported_env`.
 
----
+**Гарантии порядка по одному `invoiceId`:** одна из двух траекторий: `show → voided` **или** `show → click → (sent | cancelled)`.
+- При замене счёта событие `voided('replaced')` **строго предшествует** `show` нового счёта.
+- `hidePayButton()` из состояния `shown` даёт `voided('hidden')`; из `processing` — ошибка `ACTIVE_OPERATION` (событие не генерируется).
+```
 
 ## 6. Поведение кнопки и конкуренция
 
 ### 6.1. Жизненный цикл
-
-1. `setPayButton(params)` → рендер кнопки → `show`.
-2. Пользователь нажимает → `click`.
-3. Кошелёк либо отправляет сразу (если возможно) → `sent(boc)`,
-   либо показывает подтверждение → итог всё равно `sent(boc)` или `cancelled('user'|'wallet')`.
+1) `setPayButton(params)` → рендер кнопки → `show`.
+2) Пользователь нажимает → `click` → `processing`.
+3) Кошелёк: мгновенно или после подтверждения → `sent(boc)` **либо** `cancelled(<reason>)`.
 
 ### 6.2. Срок годности
-
-* Если `expiresAt` прошёл, клик даёт `cancelled('expired')`.
+- Если `expiresAt` истёк **до** клика: `voided('expired')`.
+- Если пользователь кликнул уже после истечения: `cancelled('expired')`.
 
 ### 6.3. Замены **до клика**
-
-* Повторный `setPayButton()` **до клика** трактуется как замена текущего счёта:
-
-  * Кошелёк эмитит `cancelled { invoiceId: <старый>, reason: 'replaced' }`.
-  * Активным становится новый счёт.
-* **Рекомендация по инвойсам:** при любом изменении полей `request` используйте **новый** `invoiceId`. Обновлять **только** `label/instantPay` с тем же `invoiceId` допустимо, но изменение суммы/актива/получателя при сохранении `invoiceId` должно приводить к `INVALID_PARAMS`.
+- Повторный `setPayButton()` **до клика**: текущий счёт завершается `voided('replaced')`, затем показывается новый → `show`.
+- Рекомендация: при любом изменении полей `request` используйте **новый** `invoiceId`. Изменения суммы/актива/получателя с прежним `invoiceId` — `INVALID_PARAMS`.
 
 ### 6.4. Попытки обновления **после клика**
-
-* Любой вызов `setPayButton()` **после события `click` и до `sent|cancelled`** должен бросать `ACTIVE_OPERATION`.
-* Вызов `hidePayButton()` в этот период допустим и должен отменять операцию с `cancelled('app')`.
-* Единственный, кто меняет состояние в этот момент — пользователь (через UI кошелька).
+- Любой `setPayButton()` между `click` и (`sent|cancelled`) — **ошибка** `ACTIVE_OPERATION`.
+- `hidePayButton()` из `processing` — **ошибка** `ACTIVE_OPERATION`.
 
 ### 6.5. `hidePayButton()`
-
-* Идемпотентно прячет UI.
-* Если есть активный счёт — операция отменяется с `cancelled('app')` и активный счёт сбрасывается.
+- Идемпотентно прячет UI.
+- Если активный счёт в состоянии `shown` — завершает его `voided('hidden')`.
 
 ### 6.6. Невалидные параметры
-
-* При невалидных `setPayButton(params)` кошелёк обязан:
-  * скрыть текущую кнопку, сбросить активный счёт;
-  * эмитить `cancelled { invoiceId: <активный>, reason: 'wallet' }` (если активный счёт был);
-  * бросить ошибку `INVALID_PARAMS`.
-
----
+- При невалидном `setPayButton(params)` кошелёк должен:
+  - снять текущую кнопку и сбросить активный счёт;
+  - если счёт был в `shown` — эмитить `voided('wallet')` для него;
+  - бросить `INVALID_PARAMS`.
+```
 
 ## 7. Фолбэк (Deep Link)
 
@@ -433,8 +399,8 @@ function updatePlan(plan: { amountTon: string }) {
 * `handshake()` — синхронный, мгновенно возвращает `protocolVersion`, `wallet.name`.
 * `setPayButton()`:
 
-  * До клика: замена текущего счёта, эмит `cancelled(replaced)` для старого.
-  * После клика: бросать `ACTIVE_OPERATION` на любой вызов `setPayButton`/`cancel`.
+  * До клика: замена текущего счёта → emit voided('replaced') для старого.
+  * После клика: бросать `ACTIVE_OPERATION` на любой вызов `setPayButton`/`hidePayButton`.
   * На просроченном счёте клик → `cancelled(expired)`.
 * События:
 
@@ -609,7 +575,7 @@ function updatePlan(plan: { amountTon: string }) {
 
 ```
 setPayButton(A: invoiceId=ia)   -> рендер A
-setPayButton(B: invoiceId=ib)   -> cancelled(ia,'replaced'), рендер B
+setPayButton(B: invoiceId=ib)   -> voided(ia,'replaced'), рендер B
 click(ib)                        -> click(ib)
 sent(ib,boc)                    -> sent(ib,boc)
 ```

@@ -23,18 +23,16 @@ export interface ProviderCapabilities {
   getActive: boolean;
   /** Instant Pay capability (if omitted — Instant Pay is unavailable) */
   instant?: {
-    /** Per-asset limits in the same units as PaymentRequest.amount. Empty array equals unavailable. */
+    /** Per-asset limits in base units (nanoton/minimal jetton unit). Empty array equals unavailable. */
     limits: Array<{ asset: Asset; limit: string }>;
   };
 }
 
-// Handshake type is generated from JSON Schemas and imported above.
-
-export type CancelReason = 'user' | 'app' | 'wallet' | 'replaced' | 'expired' | 'unsupported_env';
-
-export type RequestPaymentResult =
-  | { status: 'sent'; boc: string }
-  | { status: 'cancelled'; reason?: CancelReason };
+/** Event returned by headless requestPayment() completion */
+export type RequestPaymentCompletionEvent = Extract<
+  InstantPayEvent,
+  { type: 'sent' | 'voided' | 'cancelled' }
+>;
 
 /**
  * Event emitter interface for InstantPay protocol events.
@@ -72,8 +70,7 @@ export interface InstantPayAPI extends InstantPayProvider {
 export interface InstantPayProvider {
   setPayButton: (params: PayButtonParams) => void;
   hidePayButton: () => void;
-  requestPayment: (request: PaymentRequest) => Promise<RequestPaymentResult>;
+  requestPayment: (request: PaymentRequest) => Promise<RequestPaymentCompletionEvent>;
   getActive: () => { request: PaymentRequest } | null;
   events: InstantPayEventEmitter;
 }
-
