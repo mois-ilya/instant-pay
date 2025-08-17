@@ -109,13 +109,8 @@ export class TonConnectAdapter implements InstantPayProvider {
     try { (this.tonConnectUI).closeModal?.(); } catch { void 0; }
     (this.events as any).emit({ type: 'voided', request: req, reason: 'hidden' });
 
-    // Unmount UI (if any)
-    try { this.unmountUI?.(); } finally { this.unmountUI = undefined; }
-    if (this.mountedButton && this.mountedButton.parentElement) {
-      this.mountedButton.onclick = null;
-      this.mountedButton.remove();
-    }
-    this.mountedButton = undefined;
+    // Clean up UI
+    this.cleanupUI();
   }
 
   async requestPayment(request: PaymentRequest): Promise<RequestPaymentCompletionEvent> {
@@ -139,6 +134,8 @@ export class TonConnectAdapter implements InstantPayProvider {
       this.isProcessing = false;
       const stale = this.currentRequest;
       this.currentRequest = null;
+      // Clean up UI
+      this.cleanupUI();
       if (stale) (this.events as any).emit({ type: 'cancelled', request: stale, reason: 'expired' });
       return { type: 'cancelled', request: stale, reason: 'expired' };
     }
@@ -167,6 +164,8 @@ export class TonConnectAdapter implements InstantPayProvider {
           this.isProcessing = false;
           const req0 = this.currentRequest!;
           this.currentRequest = null;
+          // Clean up UI
+          this.cleanupUI();
           (this.events as any).emit({ type: 'cancelled', request: req0, reason: 'user' });
           return { type: 'cancelled', request: req0, reason: 'user' };
         }
@@ -216,6 +215,8 @@ export class TonConnectAdapter implements InstantPayProvider {
             this.isProcessing = false;
             const req0 = this.currentRequest!;
             this.currentRequest = null;
+            // Clean up UI
+            this.cleanupUI();
             (this.events as any).emit({ type: 'cancelled', request: req0, reason: 'wallet' });
             return { type: 'cancelled', request: req0, reason: 'wallet' };
           }
@@ -248,6 +249,8 @@ export class TonConnectAdapter implements InstantPayProvider {
         this.isProcessing = false;
         const req0 = this.currentRequest!;
         this.currentRequest = null;
+        // Clean up UI
+        this.cleanupUI();
         (this.events as any).emit({ type: 'cancelled', request: req0, reason: 'unsupported_env' });
         return { type: 'cancelled', request: req0, reason: 'unsupported_env' };
       }
@@ -275,6 +278,8 @@ export class TonConnectAdapter implements InstantPayProvider {
       this.setButtonDisabled(false);
       const msg = error instanceof Error ? String(error.message).toLowerCase() : '';
       const reason: 'user' | 'wallet' = msg.includes('reject') ? 'user' : 'wallet';
+      // Clean up UI
+      this.cleanupUI();
       (this.events as any).emit({ type: 'cancelled', request, reason });
       this.currentRequest = null;
       return { type: 'cancelled', request, reason };
@@ -286,6 +291,14 @@ export class TonConnectAdapter implements InstantPayProvider {
   }
 
   // --- UI helpers ---
+  private cleanupUI(): void {
+    try { this.unmountUI?.(); } finally { this.unmountUI = undefined; }
+    if (this.mountedButton && this.mountedButton.parentElement) {
+      this.mountedButton.onclick = null;
+      this.mountedButton.remove();
+    }
+    this.mountedButton = undefined;
+  }
   private mountOrUpdateButton(params: PayButtonParams) {
     if (!this.ui) return;
     const onClick = () => {
