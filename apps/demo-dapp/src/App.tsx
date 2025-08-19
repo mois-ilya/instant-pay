@@ -40,16 +40,16 @@ export const App: Component = () => {
         const tonconnect = new TonConnectUI({ manifestUrl: `https://tkmessages.mois.pro/tonconnect-manifest.json`, buttonRootId: 'tonconnect-button' });
 
         // Minimal resolver — can be replaced by backend/offline resolver
-        const resolveJettonWalletAddress = async (master: string, owner: string): Promise<string> => {
-            // Use the correct endpoint: /v2/accounts/{account_id}/jettons/{jetton_id}
-            const url = new URL(`https://tonapi.io/v2/accounts/${owner}/jettons/${master}`);
-            const res = await fetch(url.toString());
-            if (!res.ok) throw new Error('Failed to resolve jetton wallet');
-            const data: { address?: string } = await res.json();
-            return data.address || '';
-        };
+        // const universalResolveJettonWalletAddress = async (master: string, owner: string): Promise<string> => {
+        //     // Use the correct endpoint: /v2/accounts/{account_id}/jettons/{jetton_id}
+        //     const url = new URL(`https://tonapi.io/v2/accounts/${owner}/jettons/${master}`);
+        //     const res = await fetch(url.toString());
+        //     if (!res.ok) throw new Error('Failed to resolve jetton wallet');
+        //     const data: { address?: string } = await res.json();
+        //     return data.address || '';
+        // };
 
-        const fallbackProvider = createTonConnectProvider(tonconnect, resolveJettonWalletAddress, {
+        const fallbackProvider = createTonConnectProvider(tonconnect, {
             mount: '#tonconnect-pay-button',
             className: 'w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-lg font-semibold text-sm transition-colors'
         });

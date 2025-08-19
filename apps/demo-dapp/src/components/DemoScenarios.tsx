@@ -45,24 +45,43 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
   
   // Available assets from wallet capabilities + predefined demo jetton
   const availableAssets = () => {
+    type Asset = PaymentRequest['asset'];
+  
     const caps = props.instantPay?.capabilities?.instant?.limits ?? [];
-    const fromWallet = caps.map((c) => c.asset);
-    const demoJetton: PaymentRequest['asset'] = {
-      type: 'jetton',
-      master: 'EQBR-4-x7dik6UIHSf_IE6y2i7LdPrt3dLtoilA8sObIquW8',
-      symbol: 'POSASYVAET',
-      decimals: 9
-    };
-
-    const existTon = fromWallet.find(a => a.type === 'ton');
-
-    const demoTon: PaymentRequest['asset'] = {
-      type: 'ton',
-      symbol: 'TON',
-      decimals: 9
-    };
-
-    return existTon ? [...fromWallet, demoJetton] : [demoTon, ...fromWallet, demoJetton];
+    const fromWallet: Asset[] = caps.map((c: { asset: Asset }) => c.asset);
+  
+    const required: Asset[] = [
+      {
+        type: 'jetton',
+        master: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs',
+        symbol: 'USDT',
+        decimals: 6
+      },
+      {
+        type: 'jetton',
+        master: 'EQBR-4-x7dik6UIHSf_IE6y2i7LdPrt3dLtoilA8sObIquW8',
+        symbol: 'POSASYVAET',
+        decimals: 9
+      }
+    ] as Asset[];
+  
+    const hasTon = fromWallet.some(a => a.type === 'ton');
+    const withTon = hasTon
+      ? fromWallet
+      : ([{ type: 'ton', symbol: 'TON', decimals: 9 } as Asset, ...fromWallet]);
+  
+    const seen = new Set<string>();
+    const result: Asset[] = [];
+  
+    for (const a of [...withTon, ...required]) {
+      const key = a.type === 'jetton' ? `jetton:${(a as any).master}` : 'ton';
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push(a);
+      }
+    }
+  
+    return result;
   };
 
 

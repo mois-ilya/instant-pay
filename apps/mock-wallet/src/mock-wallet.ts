@@ -38,7 +38,8 @@ export class MockWallet implements InstantPayAPI {
         instant: {
             limits: [
                 { asset: { type: 'ton', symbol: 'TON', decimals: 9 }, limit: 10000000000n },
-                { asset: { type: 'jetton', master: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs', symbol: 'USDT', decimals: 6 }, limit: 100000000n }
+                { asset: { type: 'jetton', master: 'EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs', symbol: 'USDT', decimals: 6 }, limit: 100000000n },
+                { asset: { type: 'jetton', master: 'EQAIb6KmdfdDR7CN1GBqVJuP25iCnLKCvBlJ07Evuu2dzP5f', symbol: 'USDe', decimals: 6 }, limit: 50000000n }
             ]
         }
     };
