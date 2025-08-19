@@ -74,7 +74,7 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
     const result: Asset[] = [];
   
     for (const a of [...withTon, ...required]) {
-      const key = a.type === 'jetton' ? `jetton:${(a as any).master}` : 'ton';
+      const key = a.type === 'jetton' ? `jetton:${a.master}` : 'ton';
       if (!seen.has(key)) {
         seen.add(key);
         result.push(a);
