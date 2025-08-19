@@ -3,7 +3,7 @@ import { InstantPayInvalidParamsError, InstantPayConcurrentOperationError } from
 import type { InstantPayEventEmitter, PayButtonParams, PaymentRequest, RequestPaymentCompletionEvent, InstantPayProvider } from '@tonkeeper/instantpay-protocol';
 import type { TonConnectUI } from '@tonconnect/ui';
 import { Address, beginCell } from '@ton/core';
-import { fromDecimals } from '@tonkeeper/instantpay-utils';
+import { fromDecimals, toDecimals } from '@tonkeeper/instantpay-utils';
 import {
   JettonAddressResolver,
   type JettonResolving,
@@ -118,10 +118,19 @@ export class TonConnectAdapter implements InstantPayProvider {
   }
 
   hidePayButton(): void {
-    if (!this.currentRequest) return;
+    // If a payment is in progress, this must error per spec (ACTIVE_OPERATION)
     if (this.isProcessing) {
-      this.abortedByApp = true;
+      const activeId = this.currentRequest ? this.currentRequest.invoiceId : '';
+      throw new InstantPayConcurrentOperationError('Another payment is currently in progress', activeId);
     }
+
+    // Idempotent hide: if nothing active, still ensure UI is removed
+    if (!this.currentRequest) {
+      try { (this.tonConnectUI).closeModal?.(); } catch { void 0; }
+      this.cleanupUI();
+      return;
+    }
+
     const req = this.currentRequest;
     this.currentRequest = null;
     this.isProcessing = false;
@@ -286,9 +295,11 @@ export class TonConnectAdapter implements InstantPayProvider {
       }
       this.isProcessing = false;
       this.setButtonDisabled(false);
+      // Clean up UI BEFORE emitting 'sent' to match mock-wallet behavior
+      this.currentRequest = null;
+      this.cleanupUI();
       const boc = (typeof result === 'string') ? result : result?.boc || '';
       (this.events as any).emit({ type: 'sent', request, boc });
-      this.currentRequest = null;
       return { type: 'sent', request, boc };
     } catch (error: unknown) {
       if (this.abortedByApp) {
@@ -378,7 +389,7 @@ export class TonConnectAdapter implements InstantPayProvider {
     const prefix = labelMap[params.label] || 'Pay';
     const amount = params.request.amount;
     const decimals = params.request.asset.decimals;
-    const shown = typeof amount === 'bigint' ? fromDecimals(amount, decimals) : amount;
+    const shown = typeof amount === 'bigint' ? toDecimals(amount, decimals) : amount;
     const buttonText = `${prefix} for ${shown} ${currency}`;
 
     btn.textContent = buttonText;
