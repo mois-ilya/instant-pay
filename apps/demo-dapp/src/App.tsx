@@ -106,7 +106,7 @@ export const App: Component = () => {
                 </header>
 
                 {/* Fallback button (appears when no wallet is injected) */}
-                <div class="mb-5">
+                <div class="mb-5 px-4 md:px-0">
                     <a
                         id="fallback"
                         href="#"
