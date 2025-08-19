@@ -41,14 +41,12 @@ export const App: Component = () => {
 
         // Minimal resolver — can be replaced by backend/offline resolver
         const resolveJettonWalletAddress = async (master: string, owner: string): Promise<string> => {
-            const url = new URL('https://tonapi.io/v2/jettons/wallets');
-            url.searchParams.set('jetton', master);
-            url.searchParams.set('owner', owner);
+            // Use the correct endpoint: /v2/accounts/{account_id}/jettons/{jetton_id}
+            const url = new URL(`https://tonapi.io/v2/accounts/${owner}/jettons/${master}`);
             const res = await fetch(url.toString());
             if (!res.ok) throw new Error('Failed to resolve jetton wallet');
-            const data = await res.json() as { wallet?: { address?: string }, wallets?: Array<{ address?: string }>, address?: string };
-            const candidate = data.wallet?.address || data.address || (Array.isArray(data.wallets) ? data.wallets[0]?.address : undefined) || '';
-            return candidate;
+            const data: { address?: string } = await res.json();
+            return data.address || '';
         };
 
         const fallbackProvider = createTonConnectProvider(tonconnect, resolveJettonWalletAddress, {

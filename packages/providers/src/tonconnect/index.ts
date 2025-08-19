@@ -4,6 +4,10 @@ import type { InstantPayEventEmitter, PayButtonParams, PaymentRequest, RequestPa
 import type { TonConnectUI } from '@tonconnect/ui';
 import { Address, beginCell } from '@ton/core';
 import { fromDecimals } from '@tonkeeper/instantpay-utils';
+import {
+  JettonAddressResolver,
+  type JettonResolving,
+} from './jetton-resolver';
 
 // --- Helpers ---
 const INVOICE_OP_CODE = 0x7aa23eb5;
@@ -50,13 +54,15 @@ export class TonConnectAdapter implements InstantPayProvider {
   private abortedByApp = false;
   private unmountUI?: () => void;
   private mountedButton?: HTMLButtonElement;
+  private readonly jettonResolver: JettonAddressResolver;
 
   constructor(
     private readonly tonConnectUI: TonConnectUI,
-    private readonly resolveJettonWalletAddress: (master: string, owner: string) => Promise<string>,
-    private readonly ui?: ProviderUIOptions
+    private readonly ui: ProviderUIOptions,
+    resolveJettonWalletAddress?: JettonResolving,
   ) {
     this.events = new InstantPayEmitter() as InstantPayEventEmitter;
+    this.jettonResolver = new JettonAddressResolver(resolveJettonWalletAddress);
   }
 
   private validateParams(params: PayButtonParams) {
@@ -235,9 +241,12 @@ export class TonConnectAdapter implements InstantPayProvider {
           }
           userAddress = newUserAddress;
         }
+
+        const userAddressParsed = Address.parse(userAddress).toString({ bounceable: false });
         const amt = request.amount as string | bigint;
         const amountUnits = (typeof amt === 'bigint' ? amt : fromDecimals(amt, request.asset.decimals)).toString();
-        const jettonWalletAddr = await this.resolveJettonWalletAddress(request.asset.master, userAddress);
+        const jettonWalletAddr = await this.jettonResolver.resolveJettonWallet(request.asset.master, userAddressParsed);
+
         const opTransfer = 0x0f8a7ea5;
         const queryId = 0;
         const amountCoins = BigInt(amountUnits);
@@ -312,6 +321,7 @@ export class TonConnectAdapter implements InstantPayProvider {
     }
     this.mountedButton = undefined;
   }
+  
   private mountOrUpdateButton(params: PayButtonParams) {
     if (!this.ui) return;
     const onClick = () => {
@@ -384,8 +394,8 @@ export class TonConnectAdapter implements InstantPayProvider {
 
 export function createTonConnectProvider(
   tonConnectUI: TonConnectUI,
-  resolveJettonWalletAddress: (master: string, owner: string) => Promise<string>,
-  ui?: ProviderUIOptions
+  ui: ProviderUIOptions,
+  resolving?: JettonResolving,
 ): InstantPayProvider {
-  return new TonConnectAdapter(tonConnectUI, resolveJettonWalletAddress, ui);
+  return new TonConnectAdapter(tonConnectUI, ui, resolving);
 } 
