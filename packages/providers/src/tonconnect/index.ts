@@ -1,6 +1,6 @@
-import { InstantPayEmitter } from '@tonkeeper/instantpay-utils';
+import { InstantPayEmitter, ProtocolEventEmitter } from '@tonkeeper/instantpay-utils';
 import { InstantPayInvalidParamsError, InstantPayConcurrentOperationError } from '@tonkeeper/instantpay-sdk';
-import type { InstantPayEventEmitter, PayButtonParams, PaymentRequest, RequestPaymentCompletionEvent, InstantPayProvider } from '@tonkeeper/instantpay-protocol';
+import type { PayButtonParams, PaymentRequest, RequestPaymentCompletionEvent, InstantPayProvider } from '@tonkeeper/instantpay-protocol';
 import type { TonConnectUI } from '@tonconnect/ui';
 import { Address, beginCell } from '@ton/core';
 import { fromDecimals, toDecimals } from '@tonkeeper/instantpay-utils';
@@ -48,10 +48,9 @@ type ProviderUIOptions = {
 };
 
 export class TonConnectAdapter implements InstantPayProvider {
-  public readonly events: InstantPayEventEmitter;
+  public readonly events: ProtocolEventEmitter;
   private currentRequest: PaymentRequest | null = null;
   private isProcessing = false;
-  private abortedByApp = false;
   private unmountUI?: () => void;
   private mountedButton?: HTMLButtonElement;
   private readonly jettonResolver: JettonAddressResolver;
@@ -61,7 +60,7 @@ export class TonConnectAdapter implements InstantPayProvider {
     private readonly ui: ProviderUIOptions,
     resolveJettonWalletAddress?: JettonResolving,
   ) {
-    this.events = new InstantPayEmitter() as InstantPayEventEmitter;
+    this.events = new InstantPayEmitter();
     this.jettonResolver = new JettonAddressResolver(resolveJettonWalletAddress);
   }
 
@@ -72,7 +71,7 @@ export class TonConnectAdapter implements InstantPayProvider {
     } catch {
       throw new InstantPayInvalidParamsError('Invalid recipient address');
     }
-    const amt = req.amount as string | bigint;
+    const amt = req.amount;
     if (typeof amt === 'bigint') {
       if (amt < 0n) throw new InstantPayInvalidParamsError('Amount must be non-negative');
       return;
@@ -100,18 +99,18 @@ export class TonConnectAdapter implements InstantPayProvider {
       this.cleanupUI();
       this.currentRequest = null;
       if (activeRequest) {
-        (this.events as any).emit({ type: 'cancelled', request: activeRequest, reason: 'wallet' });
+        this.events.emit({ type: 'cancelled', request: activeRequest, reason: 'wallet' });
       }
       throw error;
     }
     
     const req = params.request;
     if (this.currentRequest && this.currentRequest.invoiceId !== req.invoiceId) {
-      (this.events as any).emit({ type: 'voided', request: this.currentRequest, reason: 'replaced' });
+      this.events.emit({ type: 'voided', request: this.currentRequest, reason: 'replaced' });
     }
     this.currentRequest = req;
-    this.abortedByApp = false;
-    (this.events as any).emit({ type: 'show', request: req });
+    
+    this.events.emit({ type: 'show', request: req });
 
     // UI integration (optional)
     this.mountOrUpdateButton(params);
@@ -135,7 +134,7 @@ export class TonConnectAdapter implements InstantPayProvider {
     this.currentRequest = null;
     this.isProcessing = false;
     try { (this.tonConnectUI).closeModal?.(); } catch { void 0; }
-    (this.events as any).emit({ type: 'voided', request: req, reason: 'hidden' });
+    this.events.emit({ type: 'voided', request: req, reason: 'hidden' });
 
     // Clean up UI
     this.cleanupUI();
@@ -148,14 +147,14 @@ export class TonConnectAdapter implements InstantPayProvider {
     }
     if (!this.currentRequest || this.currentRequest.invoiceId !== request.invoiceId) {
       if (this.currentRequest && this.currentRequest.invoiceId !== request.invoiceId) {
-        (this.events as any).emit({ type: 'voided', request: this.currentRequest, reason: 'replaced' });
+        this.events.emit({ type: 'voided', request: this.currentRequest, reason: 'replaced' });
       }
-      this.validateParams({ request, label: 'buy' } as PayButtonParams);
+      this.validateParams({ request, label: 'buy' });
       this.currentRequest = request;
     }
-    this.abortedByApp = false;
+    
     this.isProcessing = true;
-    (this.events as any).emit({ type: 'click', request });
+    this.events.emit({ type: 'click', request });
 
     const nowSec = Math.floor(Date.now() / 1000);
     if (request.expiresAt && request.expiresAt <= nowSec) {
@@ -164,7 +163,7 @@ export class TonConnectAdapter implements InstantPayProvider {
       this.currentRequest = null;
       // Clean up UI
       this.cleanupUI();
-      if (stale) (this.events as any).emit({ type: 'cancelled', request: stale, reason: 'expired' });
+      if (stale) this.events.emit({ type: 'cancelled', request: stale, reason: 'expired' });
       return { type: 'cancelled', request: stale, reason: 'expired' };
     }
 
@@ -194,12 +193,12 @@ export class TonConnectAdapter implements InstantPayProvider {
           this.currentRequest = null;
           // Clean up UI
           this.cleanupUI();
-          (this.events as any).emit({ type: 'cancelled', request: req0, reason: 'user' });
+          this.events.emit({ type: 'cancelled', request: req0, reason: 'user' });
           return { type: 'cancelled', request: req0, reason: 'user' };
         }
       }
 
-      let userAddress: string | undefined = (this.tonConnectUI).account?.address || (this.tonConnectUI).wallet?.account?.address;
+      const ownerAddress = (this.tonConnectUI).account?.address ?? ((this.tonConnectUI).wallet?.account?.address ?? '');
       const validUntil = Math.floor(Date.now() / 1000) + 60;
       const messages: Array<{ address: string; amount: string; payload?: string; stateInit?: string } > = [];
 
@@ -210,57 +209,16 @@ export class TonConnectAdapter implements InstantPayProvider {
         const invoiceBoc = invoiceCell.toBoc().toString('base64');
         messages.push({ address: request.recipient, amount: nanoAmount, payload: invoiceBoc });
       } else if (request.asset.type === 'jetton') {
-        if (!userAddress) {
-          // Try to connect wallet if address not available
-          await (this.tonConnectUI).openModal();
-          const connected = await new Promise<boolean>((resolve) => {
-            const offStatus = (this.tonConnectUI).onStatusChange?.(() => {
-              if ((this.tonConnectUI).connected) {
-                offStatus?.(); offModal?.();
-                resolve(true);
-              }
-            });
-            const offModal = (this.tonConnectUI).onModalStateChange?.((state: unknown) => {
-              const status = (typeof state === 'object' && state !== null)
-                ? (state as Record<string, unknown>)['status']
-                : undefined;
-              if (status === 'closed') {
-                offModal?.(); offStatus?.();
-                if (!(this.tonConnectUI).connected) resolve(false);
-              }
-            });
-          });
-          if (!connected) {
-            this.isProcessing = false;
-            const req0 = this.currentRequest!;
-            this.currentRequest = null;
-            (this.events as any).emit({ type: 'cancelled', request: req0, reason: 'user' });
-            return { type: 'cancelled', request: req0, reason: 'user' };
-          }
-          // Re-check address after connection
-          const newUserAddress = (this.tonConnectUI).account?.address || (this.tonConnectUI).wallet?.account?.address;
-          if (!newUserAddress) {
-            this.isProcessing = false;
-            const req0 = this.currentRequest!;
-            this.currentRequest = null;
-            // Clean up UI
-            this.cleanupUI();
-            (this.events as any).emit({ type: 'cancelled', request: req0, reason: 'wallet' });
-            return { type: 'cancelled', request: req0, reason: 'wallet' };
-          }
-          userAddress = newUserAddress;
-        }
-
-        const userAddressParsed = Address.parse(userAddress).toString({ bounceable: false });
-        const amt = request.amount as string | bigint;
+        const userAddressParsed = Address.parse(ownerAddress).toString({ bounceable: false });
+        const amt = request.amount;
         const amountUnits = (typeof amt === 'bigint' ? amt : fromDecimals(amt, request.asset.decimals)).toString();
         const jettonWalletAddr = await this.jettonResolver.resolveJettonWallet(request.asset.master, userAddressParsed);
 
-        const opTransfer = 0x0f8a7ea5;
+        const opTransfer = 0xf8a7ea5;
         const queryId = 0;
         const amountCoins = BigInt(amountUnits);
         const destAddr = Address.parse(request.recipient);
-        const ownerAddr = Address.parse(userAddress);
+        const ownerAddr = Address.parse(ownerAddress);
         const forwardToRecipient = 1n;
         const callAmount = 50_000_000n;
         const invoiceCell = buildInvoicePayloadCell(request);
@@ -270,50 +228,32 @@ export class TonConnectAdapter implements InstantPayProvider {
           .storeCoins(amountCoins)
           .storeAddress(destAddr)
           .storeAddress(ownerAddr)
-          .storeUint(0, 1)
+          .storeBit(false)
           .storeCoins(forwardToRecipient)
           .storeMaybeRef(invoiceCell)
           .endCell();
         const payloadBoc = transferCell.toBoc().toString('base64');
         messages.push({ address: jettonWalletAddr, amount: callAmount.toString(), payload: payloadBoc });
-      } else {
-        this.isProcessing = false;
-        const req0 = this.currentRequest!;
-        this.currentRequest = null;
-        // Clean up UI
-        this.cleanupUI();
-        (this.events as any).emit({ type: 'cancelled', request: req0, reason: 'unsupported_env' });
-        return { type: 'cancelled', request: req0, reason: 'unsupported_env' };
       }
 
       const txRequest = { validUntil, messages };
       const result = await (this.tonConnectUI).sendTransaction(txRequest);
-      if (this.abortedByApp) {
-        this.isProcessing = false;
-        this.currentRequest = null;
-        return { type: 'voided', request, reason: 'hidden' };
-      }
       this.isProcessing = false;
       this.setButtonDisabled(false);
       // Clean up UI BEFORE emitting 'sent' to match mock-wallet behavior
       this.currentRequest = null;
       this.cleanupUI();
-      const boc = (typeof result === 'string') ? result : result?.boc || '';
-      (this.events as any).emit({ type: 'sent', request, boc });
+      const boc = result?.boc || '';
+      this.events.emit({ type: 'sent', request, boc });
       return { type: 'sent', request, boc };
     } catch (error: unknown) {
-      if (this.abortedByApp) {
-        this.isProcessing = false;
-        this.currentRequest = null;
-        return { type: 'voided', request, reason: 'hidden' };
-      }
       this.isProcessing = false;
       this.setButtonDisabled(false);
       const msg = error instanceof Error ? String(error.message).toLowerCase() : '';
-      const reason: 'user' | 'wallet' = msg.includes('reject') ? 'user' : 'wallet';
+      const reason = msg.includes('reject') ? 'user' : 'wallet';
       // Clean up UI
       this.cleanupUI();
-      (this.events as any).emit({ type: 'cancelled', request, reason });
+      this.events.emit({ type: 'cancelled', request, reason });
       this.currentRequest = null;
       return { type: 'cancelled', request, reason };
     }
@@ -370,7 +310,7 @@ export class TonConnectAdapter implements InstantPayProvider {
     if (container instanceof HTMLButtonElement) {
       btn = container;
     } else {
-      btn = (container.querySelector('button[data-ip-tonconnect]') as HTMLButtonElement | null) || null;
+      btn = container.querySelector('button[data-ip-tonconnect]') || null;
       if (!btn) {
         btn = document.createElement('button');
         btn.type = 'button';

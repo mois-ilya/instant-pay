@@ -7,7 +7,7 @@ import { DemoScenarios } from './components/DemoScenarios';
 import { TransactionTracking } from './components/TransactionTracking';
 import { defaultScenarios } from './scenarios';
 import { TonConnectUI } from '@tonconnect/ui';
-import { createTonConnectProvider } from '@tonkeeper/instantpay-providers';
+import { createTonConnectProvider, JettonPacks } from '@tonkeeper/instantpay-providers';
 
 export type WalletType = 'real' | 'mock' | 'none';
 
@@ -27,11 +27,11 @@ export const App: Component = () => {
         }
 
         // Ensure a mount point exists for TonConnect provider button
-        let btnMount = document.querySelector('#tonconnect-pay-button');
+        let btnMount = document.querySelector('#instant-pay-button');
         if (!btnMount) {
             const host = document.querySelector('#fallback')?.parentElement || document.body;
             const div = document.createElement('div');
-            div.id = 'tonconnect-pay-button';
+            div.id = 'instant-pay-button';
             div.className = 'mb-3';
             host?.prepend(div);
         }
@@ -50,9 +50,18 @@ export const App: Component = () => {
         // };
 
         const fallbackProvider = createTonConnectProvider(tonconnect, {
-            mount: '#tonconnect-pay-button',
+            mount: '#instant-pay-button',
             className: 'w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-lg font-semibold text-sm transition-colors'
-        });
+        }, [{
+            asset: {
+                type: 'jetton',
+                master: 'EQBR-4-x7dik6UIHSf_IE6y2i7LdPrt3dLtoilA8sObIquW8',
+                symbol: 'POSASYVAET',
+                decimals: 9
+            },
+            walletCodeBase64: 'te6ccgECEQEAAyMAART/APSkE/S88sgLAQIBYgIDAgLMBAUAG6D2BdqJofQB9IH0gahhAgHUBgcCASAICQDDCDHAJJfBOAB0NMDAXGwlRNfA/AM4PpA+kAx+gAxcdch+gAx+gAwc6m0AALTH4IQD4p+pVIgupUxNFnwCeCCEBeNRRlSILqWMUREA/AK4DWCEFlfB7y6k1nwC+BfBIQP8vCAAET6RDBwuvLhTYAIBIAoLAIPUAQa5D2omh9AH0gfSBqGAJpj8EIC8aijKkQXUEIPe7L7wndCVj5cWLpn5j9ABgJ0CgR5CgCfQEsZ4sA54tmZPaqQB8VA9M/+gD6QCHwAe1E0PoA+kD6QNQwUTahUirHBfLiwSjC//LiwlQ0QnBUIBNUFAPIUAT6AljPFgHPFszJIsjLARL0APQAywDJIPkAcHTIywLKB8v/ydAE+kD0BDH6ACDXScIA8uLEd4AYyMsFUAjPFnD6AhfLaxPMgMAgEgDQ4AnoIQF41FGcjLHxnLP1AH+gIizxZQBs8WJfoCUAPPFslQBcwjkXKRceJQCKgToIIJycOAoBS88uLFBMmAQPsAECPIUAT6AljPFgHPFszJ7VQC9ztRND6APpA+kDUMAjTP/oAUVGgBfpA+kBTW8cFVHNtcFQgE1QUA8hQBPoCWM8WAc8WzMkiyMsBEvQA9ADLAMn5AHB0yMsCygfL/8nQUA3HBRyx8uLDCvoAUaihggiYloBmtgihggiYloCgGKEnlxBJEDg3XwTjDSXXCwGAPEADXO1E0PoA+kD6QNQwB9M/+gD6QDBRUaFSSccF8uLBJ8L/8uLCBYIJMS0AoBa88uLDghB73ZfeyMsfFcs/UAP6AiLPFgHPFslxgBjIywUkzxZw+gLLaszJgED7AEATyFAE+gJYzxYBzxbMye1UgAHBSeaAYoYIQc2LQnMjLH1Iwyz9Y+gJQB88WUAfPFslxgBDIywUkzxZQBvoCFctqFMzJcfsAECQQIwB8wwAjwgCwjiGCENUydttwgBDIywVQCM8WUAT6AhbLahLLHxLLP8ly+wCTNWwh4gPIUAT6AljPFgHPFszJ7VQ=',
+            packData: JettonPacks.standardV1
+        }]);
 
         // Defer SDK init so children can subscribe first
         const initAfterMount = () => {
@@ -116,8 +125,8 @@ export const App: Component = () => {
                     >
                         Open in Tonkeeper
                     </a>
-                    {/* Mount point for TonConnect provider button */}
-                    <div id="tonconnect-pay-button"/>
+                    {/* Mount point for provider button */}
+                    <div id="instant-pay-button"/>
                 </div>
 
                 {/* Transaction Tracking */}

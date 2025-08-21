@@ -9,14 +9,12 @@ export {
   JettonAddressResolver,
   JettonPacks,
   DEFAULT_TOKENS,
-  resolveJettonWalletAddress,
   isJettonResolver,
   isTokenMap,
   type AddressString,
   type Base64Boc,
   type PackDataFn,
-  type TokenDefinition,
-  type TokenMap,
+  type JettonDefinition,
   type JettonResolver,
   type JettonResolving
 } from './tonconnect/jetton-resolver';
