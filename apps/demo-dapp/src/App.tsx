@@ -51,7 +51,7 @@ export const App: Component = () => {
 
         const fallbackProvider = createTonConnectProvider(tonconnect, {
             mount: '#instant-pay-button',
-            className: 'w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-lg font-semibold text-sm transition-colors'
+            className: 'w-full text-center bg-button-primary hover:bg-button-primary-hover text-button-primary-fg disabled:bg-button-primary-disabled px-4 py-3 rounded-lg font-semibold text-sm transition-colors'
         }, [{
             asset: {
                 type: 'jetton',
@@ -97,7 +97,7 @@ export const App: Component = () => {
     });
 
     return (
-        <div class="font-sans">
+        <div class="font-sans bg-surface-page text-ink-primary min-h-screen">
             {/* Full-width status bar */}
             <div class="w-full"> 
                 <WalletStatus walletType={walletType()} handshake={instantPay()?.handshake}/>
@@ -105,11 +105,11 @@ export const App: Component = () => {
 
             <div class="max-w-6xl mx-auto p-0 md:p-5">
                 {/* Header */}
-                    <header class="text-center mb-6 p-5 bg-white rounded-none md:rounded-xl shadow-sm">
-                    <h1 class="text-3xl font-bold text-slate-800 mb-2">
+                    <header class="text-center mb-6 p-5 bg-surface-content rounded-none md:rounded-xl shadow-sm border border-surface-tint">
+                    <h1 class="text-3xl font-bold text-ink-primary mb-2">
                         InstantPay Demo dApp
                     </h1>
-                    <p class="text-slate-600">
+                    <p class="text-ink-secondary">
                         Demonstration of all InstantPay protocol features
                     </p>
                 </header>
@@ -121,7 +121,7 @@ export const App: Component = () => {
                         href="#"
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="hidden block w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-lg font-semibold text-sm transition-colors"
+                        class="hidden block w-full text-center bg-button-primary hover:bg-button-primary-hover text-button-primary-fg disabled:bg-button-primary-disabled px-4 py-3 rounded-lg font-semibold text-sm transition-colors"
                     >
                         Open in Tonkeeper
                     </a>
@@ -133,7 +133,7 @@ export const App: Component = () => {
                 <TransactionTracking boc={trackingBoc()} />
 
                 {/* Scenarios and Logs: scenarios first, then logs on mobile; side-by-side on desktop */}
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5 lg:min-h-[60vh]">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:min-h-[60vh]">
                     {/* Demo Scenarios */}
                     <DemoScenarios
                         instantPay={instantPay()}
@@ -147,10 +147,10 @@ export const App: Component = () => {
                     </div>
 
                     {/* Instructions */}
-                    <div class="bg-white rounded-none md:rounded-xl p-5 shadow-sm lg:col-span-2">
-                        <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                            <h4 class="text-base font-semibold text-blue-900 mb-3">How to Use</h4>
-                            <ol class="text-sm text-blue-800 space-y-1 list-decimal ml-4">
+                    <div class="bg-surface-content rounded-none md:rounded-xl p-5 shadow-sm lg:col-span-2 border border-surface-tint">
+                        <div class="p-4 bg-surface-tint border border-separator-common rounded-lg">
+                            <h4 class="text-base font-semibold text-ink-primary mb-3">How to Use</h4>
+                            <ol class="text-sm text-ink-secondary space-y-1 list-decimal ml-4">
                                 <li>Click "Run Scenario" to test different InstantPay features</li>
                                 <li>Watch the Event Logs panel for real-time feedback</li>
                                 <li>Try interacting with the Pay button when it appears</li>

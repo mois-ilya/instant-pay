@@ -21,11 +21,11 @@ export const WalletStatus: Component<WalletStatusProps> = (props) => {
   const statusStyle = () => {
     switch (props.walletType) {
       case 'real':
-        return 'bg-green-600';
+        return 'bg-brand-green';
       case 'mock':
-        return 'bg-amber-600';
+        return 'bg-brand-orange';
       case 'none':
-        return 'bg-red-600';
+        return 'bg-brand-red';
     }
   };
 
@@ -40,7 +40,7 @@ export const WalletStatus: Component<WalletStatusProps> = (props) => {
   return (
     <>
       {/* Compact full-width status bar */}
-      <div class={`w-full ${statusStyle()} text-white`}> 
+      <div class={`w-full ${statusStyle()} text-white`}>
         <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div class="flex items-center gap-3">
             <span class="inline-flex h-2.5 w-2.5 rounded-full bg-white/90"></span>
@@ -82,11 +82,11 @@ export const WalletStatus: Component<WalletStatusProps> = (props) => {
       <Show when={detailsOpen()}>
         <div class="fixed inset-0 z-50">
           <div class="absolute inset-0 bg-black/40" onClick={() => setDetailsOpen(false)}></div>
-          <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl w-[92vw] max-w-lg">
-            <div class="px-4 py-3 border-b">
-              <h3 class="font-semibold text-slate-800">Wallet Details</h3>
+          <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-surface-content text-ink-primary rounded-lg shadow-xl w-[92vw] max-w-lg border border-surface-tint">
+            <div class="px-4 py-3 border-b border-separator-common">
+              <h3 class="font-semibold text-ink-primary">Wallet Details</h3>
             </div>
-            <div class="p-4 text-sm text-slate-700 space-y-2">
+            <div class="p-4 text-sm text-ink-secondary space-y-2">
               <div><strong>Status:</strong> {statusText()}</div>
               <Show when={props.handshake}>
                 <div><strong>Protocol:</strong> {props.handshake!.protocolVersion}</div>
@@ -96,15 +96,15 @@ export const WalletStatus: Component<WalletStatusProps> = (props) => {
               </Show>
               <div class="pt-2">
                 <h4 class="font-semibold mb-2">Instant assets</h4>
-                <Show when={capabilities()?.instant?.limits.length} fallback={<div class="text-slate-500">Not provided by wallet</div>}>
+                <Show when={capabilities()?.instant?.limits.length} fallback={<div class="text-ink-tertiary">Not provided by wallet</div>}>
                   <ul class="space-y-1">
                     <For each={capabilities()!.instant!.limits}>
                       {(c: Capability) => (
-                        <li class="flex items-center justify-between text-slate-700">
+                        <li class="flex items-center justify-between text-ink-secondary">
                           <span>
                             {c.asset.symbol} {c.asset.type === 'jetton' ? `(${c.asset.master.slice(0, 8)}…${c.asset.master.slice(-8)})` : ''}
                           </span>
-                          <span class="text-slate-500 text-xs">≤ {toDecimals(c.limit, c.asset.decimals)} per tx</span>
+                          <span class="text-ink-tertiary text-xs">≤ {toDecimals(c.limit, c.asset.decimals)} per tx</span>
                         </li>
                       )}
                     </For>
@@ -112,8 +112,8 @@ export const WalletStatus: Component<WalletStatusProps> = (props) => {
                 </Show>
               </div>
             </div>
-            <div class="px-4 py-3 border-t flex justify-end">
-              <button class="px-4 py-1.5 rounded-md bg-slate-800 text-white text-sm" onClick={() => setDetailsOpen(false)}>Close</button>
+            <div class="px-4 py-3 border-t border-separator-common flex justify-end">
+              <button class="px-4 py-1.5 rounded-md bg-button-tertiary hover:bg-button-tertiary-hover text-button-tertiary-fg text-sm" onClick={() => setDetailsOpen(false)}>Close</button>
             </div>
           </div>
         </div>

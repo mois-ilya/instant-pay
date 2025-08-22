@@ -1,1 +1,75 @@
 @import "tailwindcss";
+
+@theme {
+  /* Ink (text) */
+  --color-ink-primary: #D9D9D9;
+  --color-ink-secondary: #8D8D93;
+  --color-ink-tertiary: #4E4E52;
+  --color-ink-accent: #45AEF5;
+  --color-ink-alt: #000000;
+
+  /* Surfaces */
+  --color-surface-page: #000000;
+  --color-surface-transparent: #000000F5; /* ARGB #F5000000 → #RRGGBBAA */
+  --color-surface-content: #17171A;
+  --color-surface-tint: #222224;
+  --color-surface-attention: #2F2F33;
+  --color-surface-highlighted: #FFFFFF0A; /* ARGB #0AFFFFFF */
+
+  /* Overlays */
+  --color-surface-overlay-strong: #0F0F0FB8; /* ARGB #B80F0F0F */
+  --color-surface-overlay-light: #0F0F0F7A;  /* ARGB #7A0F0F0F */
+  --color-surface-overlay-xlight: #0F0F0F3D; /* ARGB #3D0F0F0F */
+
+  /* Brand accents */
+  --color-brand-blue: #45AEF5;
+  --color-brand-green: #39CC83;
+  --color-brand-orange: #F5A73B;
+  --color-brand-red: #FF4766;
+  --color-brand-purple: #7665E5;
+
+  /* Buttons */
+  --color-button-primary: #45AEF5;
+  --color-button-primary-disabled: #378AC3;
+  --color-button-primary-hover: #5BB8F6;
+  --color-button-primary-fg: #FFFFFF;
+
+  --color-button-secondary: #17171A;
+  --color-button-secondary-disabled: #0E0E0F;
+  --color-button-secondary-hover: #202024;
+  --color-button-secondary-fg: #FFFFFF;
+
+  --color-button-tertiary: #222224;
+  --color-button-tertiary-disabled: #18181A;
+  --color-button-tertiary-hover: #2A2A2E;
+  --color-button-tertiary-fg: #FFFFFF;
+
+  --color-button-green: #39CC83;
+  --color-button-green-disabled: #2B9962;
+  --color-button-green-hover: #49CC8B;
+
+  --color-button-orange: #F5A73B;
+  --color-button-orange-disabled: #D68B2F;
+  --color-button-orange-hover: #FFC25E;
+
+  /* Fields */
+  --color-field-bg: #17171A;
+  --color-field-active: #45AEF5;
+  --color-field-error: #FF4766;
+  --color-field-error-bg: #FF476614; /* ARGB #14FF4766 */
+
+  /* Tab bar */
+  --color-tabbar-active: #45AEF5;
+  --color-tabbar-inactive: #8D8D93;
+
+  /* Separators */
+  --color-separator-common: #FFFFFF14; /* ARGB #14FFFFFF */
+  --color-separator-alt: #FFFFFF14;    /* ARGB #14FFFFFF */
+}
+
+@layer base {
+  html, body {
+    @apply bg-surface-page text-ink-primary;
+    min-height: 100%;
+  }
+}

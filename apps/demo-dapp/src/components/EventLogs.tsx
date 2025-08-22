@@ -34,18 +34,18 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
   const getEventTypeClass = (type: InstantPayEvent['type']) => {
     switch (type) {
       case 'show':
-        return 'font-bold text-emerald-600 uppercase text-xs';
+        return 'font-bold text-brand-blue uppercase text-xs';
       case 'click':
-        return 'font-bold text-blue-600 uppercase text-xs';
+        return 'font-bold text-brand-blue uppercase text-xs';
       case 'sent':
-        return 'font-bold text-green-600 uppercase text-xs';
+        return 'font-bold text-brand-green uppercase text-xs';
       case 'voided':
-        return 'font-bold text-orange-600 uppercase text-xs';
+        return 'font-bold text-brand-orange uppercase text-xs';
       case 'cancelled':
-        return 'font-bold text-red-600 uppercase text-xs';
+        return 'font-bold text-brand-red uppercase text-xs';
       
       default:
-        return 'font-bold text-slate-600 uppercase text-xs';
+        return 'font-bold text-ink-secondary uppercase text-xs';
     }
   };
 
@@ -117,31 +117,31 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
   };
 
   return (
-    <div class="bg-white rounded-xl p-5 shadow-sm h-full flex flex-col">
+    <div class="bg-surface-content rounded-xl p-5 shadow-sm h-full flex flex-col border border-surface-tint">
       {/* Header */}
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-xl font-semibold text-slate-800">Event Logs ({events.length})</h3>
+        <h3 class="text-xl font-semibold text-ink-primary">Event Logs ({events.length})</h3>
         <button
           onClick={clearEvents}
-          class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+          class="bg-brand-red hover:bg-brand-red/90 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
         >
           Clear
         </button>
       </div>
 
       {/* Events List */}
-      <div class="flex-1 overflow-y-auto border border-slate-200 rounded-lg">
+      <div class="flex-1 overflow-y-auto border border-separator-common rounded-lg">
         <Show 
           when={events().length > 0}
           fallback={
-            <div class="p-10 text-center text-slate-500 italic">
+            <div class="p-10 text-center text-ink-tertiary italic">
               No events yet. Try interacting with the Pay button!
             </div>
           }
         >
           <For each={events()}>
             {(event, index) => (
-              <div class={`p-3 border-b border-slate-100 last:border-b-0 ${index() === 0 ? 'bg-slate-50' : 'bg-white'}`}>
+              <div class={`p-3 border-b border-separator-common last:border-b-0 ${index() === 0 ? 'bg-surface-tint' : 'bg-surface-content'}`}>
                 {/* Event Header */}
                 <div class="flex justify-between items-center mb-2">
                   <div class="flex items-center gap-2">
@@ -152,14 +152,14 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
                       {event.type}
                     </span>
                   </div>
-                  <span class="text-xs text-slate-500 font-mono">
+                  <span class="text-xs text-ink-tertiary font-mono">
                     {formatTimestamp(event.timestamp)}
                   </span>
                 </div>
 
                 {/* Event Data */}
-                <div class="bg-slate-50 rounded p-2 text-xs font-mono">
-                  <pre class="whitespace-pre-wrap break-all text-slate-700">
+                <div class="bg-surface-tint rounded p-2 text-xs font-mono">
+                  <pre class="whitespace-pre-wrap break-all text-ink-secondary">
                     {JSON.stringify(formatEventData(event), null, 2)}
                   </pre>
                 </div>
@@ -170,7 +170,7 @@ export const EventLogs: Component<EventLogsProps> = (props) => {
       </div>
 
       {/* Info */}
-      <div class="mt-3 text-xs text-slate-600 text-center">
+      <div class="mt-3 text-xs text-ink-secondary text-center">
         Events are displayed in real-time as they occur
       </div>
     </div>

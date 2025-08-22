@@ -373,23 +373,24 @@ export class MockWallet implements InstantPayAPI {
                 right: 0;
                 z-index: 999999;
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-                background: rgba(255, 255, 255, 0.95);
+                background: rgba(23, 23, 26, 0.95);
+                color: #D9D9D9;
                 backdrop-filter: blur(10px);
-                border-top: 1px solid rgba(0, 0, 0, 0.1);
+                border-top: 1px solid rgba(255, 255, 255, 0.08);
                 padding: env(safe-area-inset-bottom, 0px) 0 0 0;
             }
             /* Confirmation modal */
-            .mock-wallet-confirm-backdrop { position: fixed; inset: 0; z-index: 1000000; background: rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; }
-            .mock-wallet-confirm-modal { background:#fff; color:#0f172a; border-radius:12px; width:min(620px,94vw); box-shadow:0 10px 30px rgba(0,0,0,0.2); padding:16px; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+            .mock-wallet-confirm-backdrop { position: fixed; inset: 0; z-index: 1000000; background: rgba(15,15,15,0.48); display:flex; align-items:center; justify-content:center; }
+            .mock-wallet-confirm-modal { background:#17171A; color:#D9D9D9; border-radius:12px; width:min(620px,94vw); box-shadow:0 10px 30px rgba(0,0,0,0.2); padding:16px; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; border:1px solid #222224; }
             .mock-wallet-confirm-title { font-size:16px; font-weight:700; margin-bottom:12px; }
             .mock-wallet-confirm-content { display:grid; gap:8px; margin-bottom:12px; }
             .mock-wallet-confirm-content .row { display:grid; grid-template-columns: auto 1fr; align-items:start; column-gap:8px; }
-            .mock-wallet-confirm-content .row span { color:#475569; font-size:13px; }
-            .mock-wallet-confirm-content code { background:#f1f5f9; padding:2px 4px; border-radius:4px; display:block; max-width:100%; overflow-wrap:anywhere; word-break:break-word; white-space:normal; }
+            .mock-wallet-confirm-content .row span { color:#8D8D93; font-size:13px; }
+            .mock-wallet-confirm-content code { background:#222224; color:#D9D9D9; padding:2px 4px; border-radius:4px; display:block; max-width:100%; overflow-wrap:anywhere; word-break:break-word; white-space:normal; }
             .mock-wallet-confirm-actions { display:flex; gap:8px; margin-top:8px; }
-            .mock-wallet-confirm-actions .approve { background:#10b981; color:#fff; border:0; border-radius:8px; padding:10px 14px; font-weight:600; cursor:pointer; }
-            .mock-wallet-confirm-actions .cancel { background:#e2e8f0; color:#0f172a; border:0; border-radius:8px; padding:10px 14px; font-weight:600; cursor:pointer; }
-            .mock-wallet-confirm-note { color:#64748b; font-size:12px; margin-top:8px; }
+            .mock-wallet-confirm-actions .approve { background:#39CC83; color:#FFFFFF; border:0; border-radius:8px; padding:10px 14px; font-weight:600; cursor:pointer; }
+            .mock-wallet-confirm-actions .cancel { background:#222224; color:#D9D9D9; border:0; border-radius:8px; padding:10px 14px; font-weight:600; cursor:pointer; }
+            .mock-wallet-confirm-note { color:#4E4E52; font-size:12px; margin-top:8px; }
             @media (max-width: 480px) {
               .mock-wallet-confirm-modal { width:96vw; padding:14px; }
               .mock-wallet-confirm-title { font-size:15px; }
@@ -401,8 +402,8 @@ export class MockWallet implements InstantPayAPI {
             }
             
             .mock-wallet-simple-btn {
-                background: #007AFF;
-                color: white;
+                background: #45AEF5;
+                color: #FFFFFF;
                 border: none;
                 border-radius: 10px;
                 padding: 16px 20px;
@@ -419,35 +420,12 @@ export class MockWallet implements InstantPayAPI {
             }
             
             .mock-wallet-simple-btn:hover {
-                background: #0056b3;
+                background: #5BB8F6;
             }
             
             .mock-wallet-simple-btn:active {
-                background: #004494;
+                background: #378AC3;
                 transform: scale(0.98);
-            }
-            
-            /* Dark mode support */
-            @media (prefers-color-scheme: dark) {
-                .mock-wallet-pay-button {
-                    background: rgba(28, 28, 30, 0.95);
-                    border-top: 1px solid rgba(255, 255, 255, 0.1);
-                }
-                .mock-wallet-confirm-modal { background:#1e293b; color:#e2e8f0; }
-                .mock-wallet-confirm-content code { background:#0f172a; color:#e2e8f0; }
-                .mock-wallet-confirm-actions .cancel { background:#334155; color:#e2e8f0; }
-                
-                .mock-wallet-simple-btn {
-                    background: #0A84FF;
-                }
-                
-                .mock-wallet-simple-btn:hover {
-                    background: #0066CC;
-                }
-                
-                .mock-wallet-simple-btn:active {
-                    background: #004499;
-                }
             }
             
             /* Animation for appearance */

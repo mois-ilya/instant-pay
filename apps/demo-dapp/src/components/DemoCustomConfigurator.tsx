@@ -68,18 +68,18 @@ export const DemoCustomConfigurator: Component<DemoCustomConfiguratorProps> = (p
   };
 
   return (
-    <div id="custom-config" class="mb-6 p-4 border border-slate-200 rounded-lg bg-slate-50">
+    <div id="custom-config" class="mb-6 p-4 border border-surface-tint rounded-lg bg-surface-content">
       <div class="flex items-center justify-between mb-3">
-        <h4 class="text-sm font-semibold text-slate-800">Custom Payment</h4>
+        <h4 class="text-sm font-semibold text-ink-primary">Custom Payment</h4>
       </div>
       <div class="grid grid-cols-12 gap-2">
         <div class="col-span-12 md:col-span-6">
-          <label class="block text-[11px] text-slate-600 mb-1">Amount</label>
-          <input value={amount()} onInput={(e) => setAmount(e.currentTarget.value)} class="w-full rounded border border-slate-300 px-2 py-1 text-sm" placeholder="0.1" />
+          <label class="block text-[11px] text-ink-tertiary mb-1">Amount</label>
+          <input value={amount()} onInput={(e) => setAmount(e.currentTarget.value)} class="w-full rounded border border-separator-common bg-field-bg text-ink-primary px-2 py-1 text-sm" placeholder="0.1" />
         </div>
         <div class="col-span-12 md:col-span-6">
-          <label class="block text-[11px] text-slate-600 mb-1">Asset</label>
-          <select value={selectedAssetKey()} onChange={(e) => onSelectAsset(e.currentTarget.value)} class="w-full rounded border border-slate-300 px-2 py-1 text-sm">
+          <label class="block text-[11px] text-ink-tertiary mb-1">Asset</label>
+          <select value={selectedAssetKey()} onChange={(e) => onSelectAsset(e.currentTarget.value)} class="w-full rounded border border-separator-common bg-field-bg text-ink-primary px-2 py-1 text-sm">
             <For each={props.assets}>
               {(a) => {
                 const key = a.type === 'ton' ? 'ton' : `jetton:${a.master}`;
@@ -91,35 +91,35 @@ export const DemoCustomConfigurator: Component<DemoCustomConfiguratorProps> = (p
         </div>
         {/* Jetton Master field removed */}
         <div class="col-span-12">
-          <label class="block text-[11px] text-slate-600 mb-1">Recipient</label>
-          <input value={recipient()} onInput={(e) => setRecipient(e.currentTarget.value)} class="w-full rounded border border-slate-300 px-2 py-1 text-sm" placeholder="UQ…" />
+          <label class="block text-[11px] text-ink-tertiary mb-1">Recipient</label>
+          <input value={recipient()} onInput={(e) => setRecipient(e.currentTarget.value)} class="w-full rounded border border-separator-common bg-field-bg text-ink-primary px-2 py-1 text-sm" placeholder="UQ…" />
         </div>
         <div class="col-span-12 md:col-span-4">
-          <label class="block text-[11px] text-slate-600 mb-1">Label</label>
-          <select value={label()} onChange={(e) => setLabel(e.currentTarget.value as PayButtonParams['label'])} class="w-full rounded border border-slate-300 px-2 py-1 text-sm">
+          <label class="block text-[11px] text-ink-tertiary mb-1">Label</label>
+          <select value={label()} onChange={(e) => setLabel(e.currentTarget.value as PayButtonParams['label'])} class="w-full rounded border border-separator-common bg-field-bg text-ink-primary px-2 py-1 text-sm">
             <For each={props.allowedLabels}>{(l) => <option value={l}>{l}</option>}</For>
           </select>
         </div>
         <div class="col-span-12 md:col-span-4">
-          <label class="block text-[11px] text-slate-600 mb-1">Instant Pay</label>
-          <select value={String(instant())} onChange={(e) => setInstant(e.currentTarget.value === 'true')} class="w-full rounded border border-slate-300 px-2 py-1 text-sm">
+          <label class="block text-[11px] text-ink-tertiary mb-1">Instant Pay</label>
+          <select value={String(instant())} onChange={(e) => setInstant(e.currentTarget.value === 'true')} class="w-full rounded border border-separator-common bg-field-bg text-ink-primary px-2 py-1 text-sm">
             <option value="true">true</option>
             <option value="false">false</option>
           </select>
         </div>
         <div class="col-span-12 md:col-span-4">
-          <label class="block text-[11px] text-slate-600 mb-1">Expires in (minutes)</label>
-          <input value={expiresMinutes()} onInput={(e) => setExpiresMinutes(e.currentTarget.value)} class="w-full rounded border border-slate-300 px-2 py-1 text-sm" placeholder="optional" />
+          <label class="block text-[11px] text-ink-tertiary mb-1">Expires in (minutes)</label>
+          <input value={expiresMinutes()} onInput={(e) => setExpiresMinutes(e.currentTarget.value)} class="w-full rounded border border-separator-common bg-field-bg text-ink-primary px-2 py-1 text-sm" placeholder="optional" />
         </div>
         <div class="col-span-12">
           <div class="flex items-end gap-2">
             <div class="flex-1">
-              <label class="block text-[11px] text-slate-600 mb-1">Invoice ID</label>
-              <input value={invoiceId()} onInput={(e) => setInvoiceId(e.currentTarget.value)} class="w-full rounded border border-slate-300 px-2 py-1 text-sm font-mono" />
+              <label class="block text-[11px] text-ink-tertiary mb-1">Invoice ID</label>
+              <input value={invoiceId()} onInput={(e) => setInvoiceId(e.currentTarget.value)} class="w-full rounded border border-separator-common bg-field-bg text-ink-primary px-2 py-1 text-sm font-mono" />
             </div>
             <button
               onClick={() => setInvoiceId(crypto.randomUUID())}
-              class="h-[34px] px-2 rounded bg-slate-200 hover:bg-slate-300 text-slate-800 text-[11px]"
+              class="h-[34px] px-2 rounded bg-button-secondary hover:bg-button-secondary-hover text-button-secondary-fg text-[11px]"
             >New</button>
           </div>
         </div>
@@ -127,7 +127,7 @@ export const DemoCustomConfigurator: Component<DemoCustomConfiguratorProps> = (p
       <div class="mt-3">
         <button
           onClick={handleSubmit}
-          class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-semibold text-sm"
+          class="bg-button-primary hover:bg-button-primary-hover disabled:bg-button-primary-disabled text-button-primary-fg px-4 py-2 rounded-lg font-semibold text-sm"
         >Set Pay Button</button>
       </div>
     </div>

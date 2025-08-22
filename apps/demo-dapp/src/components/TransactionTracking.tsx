@@ -63,23 +63,23 @@ export const TransactionTracking: Component<TransactionTrackingProps> = (props) 
   const getStatusClass = (status: TrackingStatus) => {
     switch (status) {
       case 'pending':
-        return 'text-yellow-600';
+        return 'text-button-orange';
       case 'processing':
-        return 'text-blue-600';
+        return 'text-brand-blue';
       case 'confirmed':
-        return 'text-green-600';
+        return 'text-brand-green';
       default:
-        return 'text-slate-600';
+        return 'text-ink-secondary';
     }
   };
 
   return (
     <Show when={isTracking() || currentStep()}>
-      <div class="bg-white rounded-xl p-5 shadow-sm mb-5">
-        <h3 class="text-lg font-semibold text-slate-800 mb-3">Transaction Tracking</h3>
+      <div class="bg-surface-content rounded-xl p-5 shadow-sm mb-5 border border-surface-tint">
+        <h3 class="text-lg font-semibold text-ink-primary mb-3">Transaction Tracking</h3>
         
         <Show when={currentStep()}>
-          <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+          <div class="flex items-center gap-3 p-3 bg-surface-tint rounded-lg">
             <span class="text-xl">
               {getStatusIcon(currentStep()!.status)}
             </span>
@@ -87,7 +87,7 @@ export const TransactionTracking: Component<TransactionTrackingProps> = (props) 
               <div class={`font-semibold ${getStatusClass(currentStep()!.status)}`}>
                 {currentStep()!.status.toUpperCase()}
               </div>
-              <div class="text-sm text-slate-600">
+              <div class="text-sm text-ink-secondary">
                 {currentStep()!.message}
               </div>
             </div>
@@ -95,7 +95,7 @@ export const TransactionTracking: Component<TransactionTrackingProps> = (props) 
         </Show>
 
         <Show when={props.boc}>
-          <div class="mt-3 text-xs text-slate-500">
+          <div class="mt-3 text-xs text-ink-tertiary">
             <div class="font-mono break-all">
               BOC: {props.boc}
             </div>

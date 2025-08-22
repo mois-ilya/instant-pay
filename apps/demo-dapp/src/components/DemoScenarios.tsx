@@ -164,12 +164,12 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
   });
 
   return (
-    <div id="demo-scenarios" ref={el => { rootEl = el ?? undefined; }} class="bg-white rounded-none md:rounded-xl p-5 shadow-sm">
+    <div id="demo-scenarios" ref={el => { rootEl = el ?? undefined; }} class="bg-surface-content rounded-none md:rounded-xl p-5 shadow-sm border border-surface-tint">
       <div class="flex items-center justify-between mb-5">
-        <h3 class="text-xl font-semibold text-slate-800">Demo Scenarios</h3>
+        <h3 class="text-xl font-semibold text-ink-primary">Demo Scenarios</h3>
         <button
           onClick={hidePayButton}
-          class="bg-slate-500 hover:bg-slate-600 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
+          class="bg-button-tertiary hover:bg-button-tertiary-hover text-button-tertiary-fg px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
         >
           Hide Pay Button
         </button>
@@ -177,10 +177,10 @@ export const DemoScenarios: Component<DemoScenariosProps> = (props) => {
 
       {/* Error Display */}
       <Show when={error()}>
-        <div class="p-3 mb-5 bg-red-50 border border-red-200 rounded-lg lg:rounded-lg text-red-800">
+        <div class="p-3 mb-5 bg-field-error-bg border border-button-primary rounded-lg lg:rounded-lg text-button-primary-fg/90">
           <div class="flex items-center gap-2 mb-1 justify-between">
             <strong>Error</strong>
-            <span class="text-[11px] text-red-600 bg-red-100 px-1.5 py-0.5 rounded">
+            <span class="text-[11px] text-button-primary-fg bg-separator-alt px-1.5 py-0.5 rounded">
               {(() => { const d = error()!.at; const p = (n: number) => String(n).padStart(2,'0'); return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; })()}
             </span>
           </div>
