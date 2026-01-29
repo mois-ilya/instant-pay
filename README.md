@@ -1,112 +1,90 @@
-# InstantPay 1.0 SDK & Samples
+# InstantPay Protocol
 
-Open-source repository demonstrating how dApps and wallets interact via the **InstantPay 1.0** protocol.
+A prototype of a fast payment protocol for TON. Allows dApps to accept micropayments via a native wallet button without revealing the user's address until the moment of payment.
 
-## 🚀 Quick Start
+## Concept
+
+The wallet injects `window.tonkeeper.instantPay`. The dApp describes the payment — the wallet renders the button. Payments under the limit (~1 TON) go through without confirmation.
+
+## API
+
+```typescript
+import { InstantPaySDK } from '@tonkeeper/instantpay-sdk';
+import { createTonConnectProvider } from '@tonkeeper/instantpay-providers';
+
+const sdk = new InstantPaySDK(createTonConnectProvider(tonconnect));
+
+// Show pay button
+sdk.setPayButton({
+  request: {
+    amount: '0.1',
+    recipient: 'UQCae11h...',
+    invoiceId: crypto.randomUUID(),
+    asset: { type: 'ton' }
+  },
+  label: 'buy'
+});
+
+// Hide button
+sdk.hidePayButton();
+
+// Events
+sdk.events.on('sent', (e) => console.log('BOC:', e.boc));
+sdk.events.on('cancelled', (e) => console.log('Reason:', e.reason));
+```
+
+## Types
+
+```typescript
+interface PaymentRequest {
+  amount: string;           // "0.1"
+  recipient: string;        // TON address
+  invoiceId: string;        // UUID
+  asset: { type: 'ton' } | { type: 'jetton'; master: string };
+  expiresAt?: number;       // UNIX timestamp
+}
+
+type Label = 'buy' | 'unlock' | 'use' | 'get' | 'open' | 'start' | 'retry' | 'show' | 'play' | 'try';
+```
+
+## Events
+
+| Event | When | Data |
+|-------|------|------|
+| `show` | Button displayed | `request` |
+| `click` | User clicked | `request` |
+| `sent` | Transaction sent | `request`, `boc` |
+| `voided` | Cancelled before click | `request`, `reason` |
+| `cancelled` | Cancelled after click | `request`, `reason` |
+
+## Use Cases
+
+**In-game micropayments** — purchase items without interrupting gameplay
+
+**Paid content** — unlock articles, videos
+
+**Subscriptions** — plan selection with instant activation
+
+## Structure
+
+```
+packages/
+├── protocol/    # JSON Schema + types
+├── sdk/         # InstantPaySDK
+├── providers/   # TonConnect, Deeplink adapters
+└── utils/       # Event emitter, decimals
+apps/
+├── demo-dapp/   # Interactive demo
+└── mock-wallet/ # Test wallet
+```
+
+## Run Demo
 
 ```bash
-# Install dependencies
 pnpm install
-
-# Start demo application
-pnpm run demo
+pnpm dev
 ```
 
-Visit `http://localhost:3000` to see the demo dApp in action.
+## Status
 
-## 📦 Packages & Apps
-
-| Package/App                                             | Description                  | NPM                                                                                                                       |
-| ------------------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| [`@tonkeeper/instantpay-sdk`](./packages/sdk)           | Main SDK for dApp developers | [![npm](https://img.shields.io/npm/v/@tonkeeper/instantpay-sdk)](https://www.npmjs.com/package/@tonkeeper/instantpay-sdk) |
-| [`@tonkeeper/instantpay-protocol`](./packages/protocol) | Protocol types and schemas   | -                                                                                                                         |
-| [`mock-wallet`](./apps/mock-wallet)                     | Mock wallet for testing      | -                                                                                                                         |
-| [`demo-dapp`](./apps/demo-dapp)                         | Demo application             | -                                                                                                                         |
-
-## 🔧 Development
-
-```bash
-# Install dependencies
-pnpm install
-
-# Start demo dApp
-pnpm run demo
-
-# Run linting
-pnpm run lint
-
-# Run tests
-pnpm run test
-
-# Clean all builds
-pnpm run clean
-```
-
-## 📖 Documentation
-
--   [Protocol Specification](./PROTOCOL.md) - Technical specification of InstantPay 1.0
--   [Project Specification](./PROJECT_SPEC.md) - Development requirements and architecture
--   [SDK Documentation](./packages/sdk/README.md) - How to integrate InstantPay in your dApp
--   [Wallet Integration](./apps/mock-wallet/README.md) - How to add InstantPay support to wallets
-
-## 🎯 Protocol Overview
-
-InstantPay injects a wallet‑provided object `window.tonkeeper.instantPay` that exposes the following surface:
-
--   `handshake(app, require?)` – синхронное рукопожатие без раскрытия адреса
--   `setPayButton(params)` – отрисовать или заменить нативную кнопку оплаты
--   `hidePayButton()` – скрыть кнопку (идемпотентно)
--   `getActive()` – узнать активный счёт, если он есть
--   `cancel(invoiceId?)` – отменить до клика
--   `requestPayment()` – опциональный headless‑сценарий без кнопки
--   `events` – эмиттер событий `ready`, `click`, `sent`, `cancelled`
-
-## 🧪 Demo Features
-
-The demo application showcases:
-
--   ✅ Simple TON payments
--   ✅ Jetton payments
--   ✅ Payment limit handling
--   ✅ Concurrent operation handling
--   ✅ Payment cancellation
--   ✅ Real-time event logging
--   ✅ Connection status indicator
--   ✅ Automatic mock wallet fallback
--   ✅ Mock wallet localStorage control
-
-## 🎮 Mock Wallet Control
-
-The mock wallet can be controlled via localStorage or the demo UI:
-
-### Via localStorage
-```javascript
-// Force enable mock wallet (even if real wallet exists)
-localStorage.setItem('mockWalletEnabled', 'true');
-
-// Force disable mock wallet (never use mock wallet)
-localStorage.setItem('mockWalletEnabled', 'false');
-
-// Reset to default behavior (auto-detect)
-localStorage.removeItem('mockWalletEnabled');
-```
-
-### Via Demo UI
-The demo application includes a **Mock Wallet Control** panel with buttons to:
-- **Force Enable** - Always use mock wallet
-- **Force Disable** - Never use mock wallet  
-- **Reset to Auto** - Use default detection logic
-
-Changes are applied instantly and persist across browser sessions.
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📄 License
-
-MIT © [Tonkeeper](https://github.com/tonkeeper)
+Prototype. See [PROTOCOL.md](./PROTOCOL.md) for the full specification.
