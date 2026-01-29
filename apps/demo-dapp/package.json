@@ -26,8 +26,6 @@
     "solid-js": "^1.9.7"
   },
   "devDependencies": {
-    "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
-    "@esbuild-plugins/node-modules-polyfill": "^0.2.2",
     "@tailwindcss/postcss": "^4.1.11",
     "tailwindcss": "^4.1.11",
     "typescript": "^5.9.2",

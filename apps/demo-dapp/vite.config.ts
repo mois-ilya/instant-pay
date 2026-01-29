@@ -1,22 +1,14 @@
 import { defineConfig } from 'vite';
 import solid from 'vite-plugin-solid';
 import tailwindcss from '@tailwindcss/postcss';
-import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill';
-import { NodeModulesPolyfillPlugin } from '@esbuild-plugins/node-modules-polyfill';
 
 export default defineConfig({
   base: '/instant-pay/',
-  plugins: [solid()],
+  plugins: [
+    solid(),
+  ],
   optimizeDeps: {
     include: ['@codemirror/state', '@codemirror/view'],
-    esbuildOptions: {
-      define: {
-        global: 'globalThis'
-      },
-      plugins: [
-        NodeGlobalsPolyfillPlugin({ buffer: true, process: true })
-      ]
-    }
   },
   css: {
     postcss: {
@@ -30,11 +22,5 @@ export default defineConfig({
   },
   build: {
     target: 'esnext',
-    rollupOptions: {
-      plugins: [
-        // Polyfill Node core modules in Rollup build
-        NodeModulesPolyfillPlugin()
-      ]
-    }
   },
 });
