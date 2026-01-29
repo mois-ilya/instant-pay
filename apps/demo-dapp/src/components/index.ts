@@ -10,3 +10,5 @@ export { DemoScenarios } from './DemoScenarios';
 export { DemoCustomConfigurator } from './DemoCustomConfigurator';
 export { DemoScenarioCard } from './DemoScenarioCard';
 export { TransactionTracking } from './TransactionTracking';
+export { CodeBlock } from './CodeBlock';
+export { CodeExamples } from './CodeExamples';

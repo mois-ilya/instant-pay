@@ -1,28 +1,51 @@
-import { Component, createMemo, createSignal, onMount, onCleanup } from 'solid-js';
+import { Component, createSignal, onMount, onCleanup } from 'solid-js';
 import { InstantPay as InstantPay } from '@tonkeeper/instantpay-sdk';
 import { initMockWallet, isMockWalletActive } from 'mock-wallet';
 import { WalletStatus } from './components/WalletStatus';
 import { EventLogs } from './components/EventLogs';
 import { DemoScenarios } from './components/DemoScenarios';
 import { TransactionTracking } from './components/TransactionTracking';
+import { CodeExamples } from './components/CodeExamples';
 import { defaultScenarios } from './scenarios';
 import { TonConnectUI } from '@tonconnect/ui';
-import { createTonConnectProvider, JettonPacks } from '@tonkeeper/instantpay-providers';
+import { createTonConnectProvider, createDeeplinkProvider, JettonPacks } from '@tonkeeper/instantpay-providers';
 
 export type WalletType = 'real' | 'mock' | 'none';
+export type ProviderMode = 'mock' | 'tonconnect' | 'deeplink';
+
+// Helper to get stored provider mode with migration from legacy key
+const getStoredMode = (): ProviderMode => {
+    const stored = localStorage.getItem('providerMode');
+    if (stored && ['mock', 'tonconnect', 'deeplink'].includes(stored)) {
+        return stored as ProviderMode;
+    }
+    // Migration from legacy mockWalletEnabled
+    const legacyMock = localStorage.getItem('mockWalletEnabled');
+    if (legacyMock === 'true') {
+        localStorage.setItem('providerMode', 'mock');
+        localStorage.removeItem('mockWalletEnabled');
+        return 'mock';
+    }
+    localStorage.removeItem('mockWalletEnabled');
+    return 'tonconnect';
+};
 
 export const App: Component = () => {
     const [walletType, setWalletType] = createSignal<WalletType>('none');
     const [instantPay, setInstantPay] = createSignal<InstantPay | null>(null);
     const [trackingBoc, setTrackingBoc] = createSignal<string | null>(null);
-    
+    const [providerMode] = createSignal<ProviderMode>(getStoredMode());
 
-    const isMockWalletEnabled = createMemo(
-        () => localStorage.getItem('mockWalletEnabled') === 'true'
-    );
+    const handleModeChange = (newMode: ProviderMode) => {
+        localStorage.setItem('providerMode', newMode);
+        window.location.reload();
+    };
 
     onMount(() => {
-        if (isMockWalletEnabled()) {
+        const mode = providerMode();
+
+        // Only inject mock wallet if in mock mode
+        if (mode === 'mock') {
             initMockWallet();
         }
 
@@ -36,47 +59,41 @@ export const App: Component = () => {
             host?.prepend(div);
         }
 
-        // TonConnect UI instance
+        // TonConnect UI instance (needed for tonconnect and mock modes)
         const tonconnect = new TonConnectUI({ manifestUrl: `https://tkmessages.mois.pro/tonconnect-manifest.json`, buttonRootId: 'tonconnect-button' });
 
-        // Minimal resolver — can be replaced by backend/offline resolver
-        // const universalResolveJettonWalletAddress = async (master: string, owner: string): Promise<string> => {
-        //     // Use the correct endpoint: /v2/accounts/{account_id}/jettons/{jetton_id}
-        //     const url = new URL(`https://tonapi.io/v2/accounts/${owner}/jettons/${master}`);
-        //     const res = await fetch(url.toString());
-        //     if (!res.ok) throw new Error('Failed to resolve jetton wallet');
-        //     const data: { address?: string } = await res.json();
-        //     return data.address || '';
-        // };
-
-        const fallbackProvider = createTonConnectProvider(tonconnect, {
-            mount: '#instant-pay-button',
-            className: 'w-full text-center bg-button-primary hover:bg-button-primary-hover text-button-primary-fg disabled:bg-button-primary-disabled px-4 py-3 rounded-lg font-semibold text-sm transition-colors'
-        }, [{
-            asset: {
-                type: 'jetton',
-                master: 'EQBR-4-x7dik6UIHSf_IE6y2i7LdPrt3dLtoilA8sObIquW8',
-                symbol: 'POSASYVAET',
-                decimals: 9
-            },
-            walletCodeBase64: 'te6ccgECEQEAAyMAART/APSkE/S88sgLAQIBYgIDAgLMBAUAG6D2BdqJofQB9IH0gahhAgHUBgcCASAICQDDCDHAJJfBOAB0NMDAXGwlRNfA/AM4PpA+kAx+gAxcdch+gAx+gAwc6m0AALTH4IQD4p+pVIgupUxNFnwCeCCEBeNRRlSILqWMUREA/AK4DWCEFlfB7y6k1nwC+BfBIQP8vCAAET6RDBwuvLhTYAIBIAoLAIPUAQa5D2omh9AH0gfSBqGAJpj8EIC8aijKkQXUEIPe7L7wndCVj5cWLpn5j9ABgJ0CgR5CgCfQEsZ4sA54tmZPaqQB8VA9M/+gD6QCHwAe1E0PoA+kD6QNQwUTahUirHBfLiwSjC//LiwlQ0QnBUIBNUFAPIUAT6AljPFgHPFszJIsjLARL0APQAywDJIPkAcHTIywLKB8v/ydAE+kD0BDH6ACDXScIA8uLEd4AYyMsFUAjPFnD6AhfLaxPMgMAgEgDQ4AnoIQF41FGcjLHxnLP1AH+gIizxZQBs8WJfoCUAPPFslQBcwjkXKRceJQCKgToIIJycOAoBS88uLFBMmAQPsAECPIUAT6AljPFgHPFszJ7VQC9ztRND6APpA+kDUMAjTP/oAUVGgBfpA+kBTW8cFVHNtcFQgE1QUA8hQBPoCWM8WAc8WzMkiyMsBEvQA9ADLAMn5AHB0yMsCygfL/8nQUA3HBRyx8uLDCvoAUaihggiYloBmtgihggiYloCgGKEnlxBJEDg3XwTjDSXXCwGAPEADXO1E0PoA+kD6QNQwB9M/+gD6QDBRUaFSSccF8uLBJ8L/8uLCBYIJMS0AoBa88uLDghB73ZfeyMsfFcs/UAP6AiLPFgHPFslxgBjIywUkzxZw+gLLaszJgED7AEATyFAE+gJYzxYBzxbMye1UgAHBSeaAYoYIQc2LQnMjLH1Iwyz9Y+gJQB88WUAfPFslxgBDIywUkzxZQBvoCFctqFMzJcfsAECQQIwB8wwAjwgCwjiGCENUydttwgBDIywVQCM8WUAT6AhbLahLLHxLLP8ly+wCTNWwh4gPIUAT6AljPFgHPFszJ7VQ=',
-            packData: JettonPacks.standardV1
-        }]);
+        // Create fallback provider based on mode
+        const fallbackProvider = mode === 'deeplink'
+            ? createDeeplinkProvider()
+            : createTonConnectProvider(tonconnect, {
+                mount: '#instant-pay-button',
+                className: 'w-full text-center bg-button-primary hover:bg-button-primary-hover text-button-primary-fg disabled:bg-button-primary-disabled px-4 py-3 rounded-lg font-semibold text-sm transition-colors'
+            }, [{
+                asset: {
+                    type: 'jetton',
+                    master: 'EQBR-4-x7dik6UIHSf_IE6y2i7LdPrt3dLtoilA8sObIquW8',
+                    symbol: 'POSASYVAET',
+                    decimals: 9
+                },
+                walletCodeBase64: 'te6ccgECEQEAAyMAART/APSkE/S88sgLAQIBYgIDAgLMBAUAG6D2BdqJofQB9IH0gahhAgHUBgcCASAICQDDCDHAJJfBOAB0NMDAXGwlRNfA/AM4PpA+kAx+gAxcdch+gAx+gAwc6m0AALTH4IQD4p+pVIgupUxNFnwCeCCEBeNRRlSILqWMUREA/AK4DWCEFlfB7y6k1nwC+BfBIQP8vCAAET6RDBwuvLhTYAIBIAoLAIPUAQa5D2omh9AH0gfSBqGAJpj8EIC8aijKkQXUEIPe7L7wndCVj5cWLpn5j9ABgJ0CgR5CgCfQEsZ4sA54tmZPaqQB8VA9M/+gD6QCHwAe1E0PoA+kD6QNQwUTahUirHBfLiwSjC//LiwlQ0QnBUIBNUFAPIUAT6AljPFgHPFszJIsjLARL0APQAywDJIPkAcHTIywLKB8v/ydAE+kD0BDH6ACDXScIA8uLEd4AYyMsFUAjPFnD6AhfLaxPMgMAgEgDQ4AnoIQF41FGcjLHxnLP1AH+gIizxZQBs8WJfoCUAPPFslQBcwjkXKRceJQCKgToIIJycOAoBS88uLFBMmAQPsAECPIUAT6AljPFgHPFszJ7VQC9ztRND6APpA+kDUMAjTP/oAUVGgBfpA+kBTW8cFVHNtcFQgE1QUA8hQBPoCWM8WAc8WzMkiyMsBEvQA9ADLAMn5AHB0yMsCygfL/8nQUA3HBRyx8uLDCvoAUaihggiYloBmtgihggiYloCgGKEnlxBJEDg3XwTjDSXXCwGAPEADXO1E0PoA+kD6QNQwB9M/+gD6QDBRUaFSSccF8uLBJ8L/8uLCBYIJMS0AoBa88uLDghB73ZfeyMsfFcs/UAP6AiLPFgHPFslxgBjIywUkzxZw+gLLaszJgED7AEATyFAE+gJYzxYBzxbMye1UgAHBSeaAYoYIQc2LQnMjLH1Iwyz9Y+gJQB88WUAfPFslxgBDIywUkzxZQBvoCFctqFMzJcfsAECQQIwB8wwAjwgCwjiGCENUydttwgBDIywVQCM8WUAT6AhbLahLLHxLLP8ly+wCTNWwh4gPIUAT6AljPFgHPFszJ7VQ=',
+                packData: JettonPacks.standardV1
+            }]);
 
         // Defer SDK init so children can subscribe first
         const initAfterMount = () => {
             const ip = new InstantPay(fallbackProvider);
             setInstantPay(ip);
-            // Set initial wallet type based on synchronous injection status
+
+            // Set wallet type based on injection status
             setWalletType(ip.isInjected ? (isMockWalletActive() ? 'mock' : 'real') : 'none');
-            
+
             // Listen for 'sent' events to start transaction tracking
             const unsubSent = ip.events.on('sent', (event) => {
                 if (event.boc) {
                     setTrackingBoc(event.boc);
                 }
             });
-            
+
             // Listen for 'cancelled' and 'voided' events to reset tracking
             const unsubCancelled = ip.events.on('cancelled', () => {
                 setTrackingBoc(null);
@@ -84,7 +101,7 @@ export const App: Component = () => {
             const unsubVoided = ip.events.on('voided', () => {
                 setTrackingBoc(null);
             });
-            
+
             onCleanup(() => {
                 unsubSent();
                 unsubCancelled();
@@ -100,7 +117,12 @@ export const App: Component = () => {
         <div class="font-sans bg-surface-page text-ink-primary min-h-screen">
             {/* Full-width status bar */}
             <div class="w-full"> 
-                <WalletStatus walletType={walletType()} handshake={instantPay()?.handshake}/>
+                <WalletStatus
+                    walletType={walletType()}
+                    handshake={instantPay()?.handshake}
+                    currentMode={providerMode()}
+                    onModeChange={handleModeChange}
+                />
             </div>
 
             <div class="max-w-6xl mx-auto p-0 md:p-5">
@@ -159,6 +181,9 @@ export const App: Component = () => {
                             </ol>
                         </div>
                     </div>
+
+                    {/* Code Examples */}
+                    <CodeExamples />
                 </div>
             </div>
         </div>

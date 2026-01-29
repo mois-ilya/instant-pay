@@ -1,12 +1,20 @@
 import { Component, Show, createSignal, createMemo, For } from 'solid-js';
 import { toDecimals } from '@tonkeeper/instantpay-sdk';
 import type { Handshake } from '@tonkeeper/instantpay-sdk';
-import { WalletType } from '../App';
+import { ProviderMode, WalletType } from '../App';
 
 interface WalletStatusProps {
   walletType: WalletType;
   handshake?: Handshake;
+  currentMode: ProviderMode;
+  onModeChange: (mode: ProviderMode) => void;
 }
+
+const MODE_OPTIONS = [
+  { value: 'mock' as const, label: 'Mock Wallet', disabled: false },
+  { value: 'tonconnect' as const, label: 'TonConnect', disabled: false },
+  { value: 'deeplink' as const, label: 'Deeplink', disabled: true },
+];
 
 export const WalletStatus: Component<WalletStatusProps> = (props) => {
   const [detailsOpen, setDetailsOpen] = createSignal(false);
@@ -53,7 +61,7 @@ export const WalletStatus: Component<WalletStatusProps> = (props) => {
           <div class="flex items-center gap-2">
             <Show when={props.walletType === 'none'}>
               <span class="text-xs bg-white/15 px-2 py-1 rounded">
-                Fallback (TonConnect) will be used
+                {props.currentMode === 'deeplink' ? 'Deeplink fallback' : 'TonConnect fallback'}
               </span>
             </Show>
             <Show when={props.walletType === 'none'}>
@@ -65,15 +73,30 @@ export const WalletStatus: Component<WalletStatusProps> = (props) => {
             >
               Details
             </button>
-            <button
-              class="text-xs px-3 py-1.5 rounded-md bg-white/15 hover:bg-white/25 transition-colors"
-              onClick={() => {
-                localStorage.setItem('mockWalletEnabled', props.walletType === 'mock' ? 'false' : 'true');
-                window.location.reload();
+            <select
+              value={props.currentMode}
+              onChange={(e) => {
+                const newMode = e.currentTarget.value as ProviderMode;
+                if (newMode !== props.currentMode) {
+                  props.onModeChange(newMode);
+                }
+              }}
+              class="text-xs px-3 py-1.5 rounded-md bg-white/15 hover:bg-white/25 transition-colors cursor-pointer border-0 text-white appearance-none pr-7"
+              style={{
+                "background-image": `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                "background-position": "right 0.35rem center",
+                "background-repeat": "no-repeat",
+                "background-size": "1.1em 1.1em"
               }}
             >
-              Toggle Mock Wallet
-            </button>
+              <For each={MODE_OPTIONS}>
+                {(opt) => (
+                  <option value={opt.value} disabled={opt.disabled} class="bg-surface-content text-ink-primary">
+                    {opt.label}{opt.disabled ? ' (N/A)' : ''}
+                  </option>
+                )}
+              </For>
+            </select>
           </div>
         </div>
       </div>

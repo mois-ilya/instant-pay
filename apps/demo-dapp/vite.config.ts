@@ -7,6 +7,7 @@ import { NodeModulesPolyfillPlugin } from '@esbuild-plugins/node-modules-polyfil
 export default defineConfig({
   plugins: [solid()],
   optimizeDeps: {
+    include: ['@codemirror/state', '@codemirror/view'],
     esbuildOptions: {
       define: {
         global: 'globalThis'
